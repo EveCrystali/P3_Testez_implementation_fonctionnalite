@@ -1,0 +1,24 @@
+﻿@model P3AddNewFunctionalityDotNetCore.Models.ViewModels.LoginModel
+
+@{
+    ViewBag.Title = "Log In";
+    Layout = "_AdminLayout";
+}
+
+
+<form asp-action="Login" asp-controller="Account" method="post">
+    <div class="text-danger mt-4" asp-validation-summary="All"></div>
+    <input type="hidden" asp-for="ReturnUrl" />
+    <div class="mb-3">
+        <label asp-for="Name"></label>
+        <input asp-for="Name" class="form-control" />
+        <div><span asp-validation-for="Name" class="text-danger"></span></div>       
+    </div>
+    <div class="mb-3">
+        <label asp-for="Password"></label>
+        <input asp-for="Password" class="form-control" />
+        <div><span asp-validation-for="Password" class="text-danger"></span></div>       
+    </div>
+    <button class="btn btn-primary" type="submit">Log In</button>
+</form>
+
