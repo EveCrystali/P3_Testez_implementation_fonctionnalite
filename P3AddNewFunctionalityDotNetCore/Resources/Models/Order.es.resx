@@ -117,31 +117,19 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Administrator" xml:space="preserve">
-    <value>Administrateur</value>
+  <data name="ErrorMissingAddress" xml:space="preserve">
+    <value>Por favor ingrese una direccion</value>
   </data>
-  <data name="Create" xml:space="preserve">
-    <value>Créer</value>
+  <data name="ErrorMissingCity" xml:space="preserve">
+    <value>Por favor ingresa el nombre de una ciudad</value>
   </data>
-  <data name="Delete" xml:space="preserve">
-    <value>Supprimer</value>
+  <data name="ErrorMissingCountry" xml:space="preserve">
+    <value>Por favor ingresa el nombre de un país</value>
   </data>
-  <data name="Description" xml:space="preserve">
-    <value>Description</value>
+  <data name="ErrorMissingName" xml:space="preserve">
+    <value>Por favor ingresa un nombre</value>
   </data>
-  <data name="Name" xml:space="preserve">
-    <value>Nom</value>
-  </data>
-  <data name="Price" xml:space="preserve">
-    <value>Prix</value>
-  </data>
-  <data name="ProductAdministrationModule" xml:space="preserve">
-    <value>Module d'administration des produits</value>
-  </data>
-  <data name="Stock" xml:space="preserve">
-    <value>Stock</value>
-  </data>
-  <data name="Details" xml:space="preserve">
-    <value>Details</value>
+  <data name="ErrorMissingZip" xml:space="preserve">
+    <value>Por favor introduce un código postal</value>
   </data>
 </root>
