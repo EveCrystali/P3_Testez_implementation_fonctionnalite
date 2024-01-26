@@ -16,19 +16,19 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Entities
 
         public string Details { get; set; }
 
-        [Required(ErrorMessage = "MissingName")]
+        //[Required(ErrorMessage = "ErrorMissingName")]
         public string Name { get; set; }
 
-        [Required(ErrorMessage = "MissingPrice")]
-        [RegularExpression(@"^\d+.\d{0,2}$", ErrorMessage = "InvalidPriceFormat")]
-        [Range(0.01, double.MaxValue, ErrorMessage = "PriceNotGreaterThanZero")]
+        //[Required(ErrorMessage = "ErrorMissingPrice")]
+        //[RegularExpression(@"^\d+.\d{0,2}$", ErrorMessage = "ErrorPriceValue")]
+        //[Range(0.01, double.MaxValue, ErrorMessage = "ErrorPriceValue")]
 
         public double Price { get; set; }
 
 
-        [Required(ErrorMessage = "MissingQuantity")]
-        [RegularExpression(@"^\d+$", ErrorMessage = "InvalidQuantityFormat")]
-        [Range(1, int.MaxValue, ErrorMessage = "StockNotGreaterThanZero")]
+        //[Required(ErrorMessage = "ErrorMissingStock")]
+        //[RegularExpression(@"^\d+$", ErrorMessage = "ErrorStockValue")]
+        //[Range(1, int.MaxValue, ErrorMessage = "ErrorStockValue")]
         public int Quantity { get; set; }
 
         public virtual ICollection<OrderLine> OrderLine { get; set; }

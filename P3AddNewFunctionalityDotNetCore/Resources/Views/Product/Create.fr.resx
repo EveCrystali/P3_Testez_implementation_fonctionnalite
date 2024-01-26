@@ -126,6 +126,21 @@
   <data name="Details" xml:space="preserve">
     <value>Details</value>
   </data>
+  <data name="InvalidPriceFormat" xml:space="preserve">
+    <value>Veuillez entrer un format de prix valide.</value>
+  </data>
+  <data name="InvalidQuantityFormat" xml:space="preserve">
+    <value>Veuillez entrer un format de quantité valide.</value>
+  </data>
+  <data name="MissingName" xml:space="preserve">
+    <value>Veuillez entrer le nom produit.</value>
+  </data>
+  <data name="MissingPrice" xml:space="preserve">
+    <value>Veuillez entrer le prix du produit.</value>
+  </data>
+  <data name="MissingQuantity" xml:space="preserve">
+    <value>Veuillez entrer une quantité.</value>
+  </data>
   <data name="Name" xml:space="preserve">
     <value>Nom</value>
   </data>
@@ -135,7 +150,13 @@
   <data name="Price" xml:space="preserve">
     <value>Prix</value>
   </data>
+  <data name="PriceNotGreaterThanZero" xml:space="preserve">
+    <value>Veuillez entrer un prix positif.</value>
+  </data>
   <data name="Stock" xml:space="preserve">
     <value>Stock</value>
+  </data>
+  <data name="StockNotGreaterThanZero" xml:space="preserve">
+    <value>Veuillez entrer une quantité positive.</value>
   </data>
 </root>

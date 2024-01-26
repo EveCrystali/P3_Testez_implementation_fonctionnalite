@@ -30,6 +30,11 @@
 
   <ItemGroup>
     <EmbeddedResource Remove="Resources\Models\Order.en.resx" />
+    <EmbeddedResource Remove="Resources\Views\Product\Create.en.resx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Views\Product\Create.en.resx" />
   </ItemGroup>
 
   <ItemGroup>
