@@ -117,31 +117,37 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Administrator" xml:space="preserve">
-    <value>Administrateur</value>
+  <data name="Address" xml:space="preserve">
+    <value>Dirección</value>
   </data>
-  <data name="Create" xml:space="preserve">
-    <value>Créer</value>
+  <data name="City" xml:space="preserve">
+    <value>Ciudad</value>
   </data>
-  <data name="Delete" xml:space="preserve">
-    <value>Supprimer</value>
+  <data name="CompleteOrder" xml:space="preserve">
+    <value>Orden completa</value>
   </data>
-  <data name="Description" xml:space="preserve">
-    <value>Description</value>
+  <data name="Country" xml:space="preserve">
+    <value>País</value>
+  </data>
+  <data name="EnterDetails" xml:space="preserve">
+    <value>¡Ingrese sus datos y enviaremos sus productos de inmediato!</value>
+  </data>
+  <data name="Location" xml:space="preserve">
+    <value>Ubicación</value>
   </data>
   <data name="Name" xml:space="preserve">
-    <value>Nom</value>
+    <value>Nombre</value>
   </data>
-  <data name="Price" xml:space="preserve">
-    <value>Prix</value>
+  <data name="OrderTitle" xml:space="preserve">
+    <value>Por favor consulte</value>
   </data>
-  <data name="ProductAdministrationModule" xml:space="preserve">
-    <value>Module d'administration des produits</value>
+  <data name="ShipSoon" xml:space="preserve">
+    <value>Enviaremos sus productos lo antes posible.</value>
   </data>
-  <data name="Stock" xml:space="preserve">
-    <value>Stock</value>
+  <data name="ShipTo" xml:space="preserve">
+    <value>Envie a</value>
   </data>
-  <data name="Details" xml:space="preserve">
-    <value>Details</value>
+  <data name="Zip" xml:space="preserve">
+    <value>Código postal</value>
   </data>
 </root>

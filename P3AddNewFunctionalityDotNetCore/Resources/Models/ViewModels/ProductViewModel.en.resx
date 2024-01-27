@@ -117,31 +117,25 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Administrator" xml:space="preserve">
-    <value>Administrateur</value>
+  <data name="MissingName" xml:space="preserve">
+    <value>Please enter a name</value>
   </data>
-  <data name="Create" xml:space="preserve">
-    <value>Créer</value>
+  <data name="MissingPrice" xml:space="preserve">
+    <value>Please enter a price</value>
   </data>
-  <data name="Delete" xml:space="preserve">
-    <value>Supprimer</value>
+  <data name="MissingStock" xml:space="preserve">
+    <value>Please enter a stock value</value>
   </data>
-  <data name="Description" xml:space="preserve">
-    <value>Description</value>
+  <data name="PriceNotANumber" xml:space="preserve">
+    <value>The value entered for the price must be a number</value>
   </data>
-  <data name="Name" xml:space="preserve">
-    <value>Nom</value>
+  <data name="PriceNotGreaterThanZero" xml:space="preserve">
+    <value>The price must be greater than zero</value>
   </data>
-  <data name="Price" xml:space="preserve">
-    <value>Prix</value>
+  <data name="StockNotAnInteger" xml:space="preserve">
+    <value>The value entered for the stock must be a integer</value>
   </data>
-  <data name="ProductAdministrationModule" xml:space="preserve">
-    <value>Module d'administration des produits</value>
-  </data>
-  <data name="Stock" xml:space="preserve">
-    <value>Stock</value>
-  </data>
-  <data name="Details" xml:space="preserve">
-    <value>Details</value>
+  <data name="StockNotGreaterThanZero" xml:space="preserve">
+    <value>The stock must greater than zero</value>
   </data>
 </root>
