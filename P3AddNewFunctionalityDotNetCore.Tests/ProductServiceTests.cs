@@ -21,6 +21,11 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             Assert.Equal(1, 1);
         }
 
+
+
+
+
+
         // TODO write test methods to ensure a correct coverage of all possibilities
     }
 }
