@@ -16,7 +16,7 @@
     <Content Remove="Models\ViewModel\**" />
     <Content Remove="Repository\**" />
     <EmbeddedResource Remove="Infrastructure\**" />
-    <EmbeddedResource Remove="Models\ViewModel\**" />
+    <EmbeddedResource Include="Models\ViewModel\**" />
     <EmbeddedResource Remove="Repository\**" />
     <None Remove="Infrastructure\**" />
     <None Remove="Models\ViewModel\**" />
