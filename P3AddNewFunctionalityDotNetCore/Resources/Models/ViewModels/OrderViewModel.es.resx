@@ -129,7 +129,7 @@
   <data name="ErrorMissingName" xml:space="preserve">
     <value>Por favor ingresa un nombre</value>
   </data>
-  <data name="ErrorMissingZip" xml:space="preserve">
+  <data name="ErrorMissingZipCode" xml:space="preserve">
     <value>Por favor introduce un código postal</value>
   </data>
 </root>
