@@ -85,7 +85,6 @@ namespace P2FixAnAppDotNetCode.Tests
             Assert.True(_controller.ModelState.IsValid, "Not Empty Cart and Model is Valid");
         }
 
-        //TODO
         [Fact]
         //Cart is not empty and form is not valid : name is missing ErrorMissingName
         public void Index_MissingName_ModelStateIsNotValid()
@@ -106,30 +105,176 @@ namespace P2FixAnAppDotNetCode.Tests
             _controller = new OrderController(cart, _mockOrderService.Object, _mockLocalizer.Object);
             var order = new OrderViewModel()
             {
-                Name = "test",
+                Name = "",
                 Address = "AdresseTest",
                 City = "VilleTest",
                 Zip = "ZipTest",
-                Country = "PaysTest",
+                Country = "CountryTest",
             };
 
-            // Act
+            var validationContext = new ValidationContext(order, null, null);
+            var validationResults = new List<ValidationResult>();
+            bool isValid = Validator.TryValidateObject(order, validationContext, validationResults, true);
 
+            // Act
             var result = _controller.Index(order) as ViewResult;
-            var modelStateValidity = _controller.ModelState.GetValidationState(order.Name);
-            bool ErrorMissingName = (modelStateValidity != ModelValidationState.Valid);
 
             // Assert
-            Assert.True(ErrorMissingName, "Not Empty Cart and Name is missing");
-
-            //var nameErrors = _controller.ModelState["Name"]?.Errors;
-            ////Assert.NotNull(nameErrors);
-            //Assert.NotEmpty(nameErrors);
-            //Assert.Contains(nameErrors, e => e.ErrorMessage == "Error message for missing name");
-
-
-
+            Assert.False(isValid, "Model should be invalid when Name is missing");
         }
+
+        [Fact]
+        //Cart is not empty and form is not valid : Adress is missing ErrorMissingAddress
+        public void Index_MissingAddress_ModelStateIsNotValid()
+        {
+            // Arrange
+            Cart cart = new Cart();
+            Product product = new Product
+            {
+                Name = "ProductNameTest",
+                Price = 1.00,
+                Quantity = 1,
+                Description = "DescriptionTest",
+                Details = "DetailsTest",
+                Id = 1,
+            };
+
+            cart.AddItem(product, 1);
+            _controller = new OrderController(cart, _mockOrderService.Object, _mockLocalizer.Object);
+            var order = new OrderViewModel()
+            {
+                Name = "NameTest",
+                Address = "",
+                City = "VilleTest",
+                Zip = "ZipTest",
+                Country = "CountryTest",
+            };
+
+            var validationContext = new ValidationContext(order, null, null);
+            var validationResults = new List<ValidationResult>();
+            bool isValid = Validator.TryValidateObject(order, validationContext, validationResults, true);
+
+            // Act
+            var result = _controller.Index(order) as ViewResult;
+
+            // Assert
+            Assert.False(isValid, "Model should be invalid when Address is missing");
+        }
+
+        [Fact]
+        //Cart is not empty and form is not valid : City is missing ErrorMissingCity
+        public void Index_MissingCity_ModelStateIsNotValid()
+        {
+            // Arrange
+            Cart cart = new Cart();
+            Product product = new Product
+            {
+                Name = "ProductNameTest",
+                Price = 1.00,
+                Quantity = 1,
+                Description = "DescriptionTest",
+                Details = "DetailsTest",
+                Id = 1,
+            };
+
+            cart.AddItem(product, 1);
+            _controller = new OrderController(cart, _mockOrderService.Object, _mockLocalizer.Object);
+            var order = new OrderViewModel()
+            {
+                Name = "NameTest",
+                Address = "AdresseTest",
+                City = "",
+                Zip = "ZipTest",
+                Country = "CountryTest",
+            };
+
+            var validationContext = new ValidationContext(order, null, null);
+            var validationResults = new List<ValidationResult>();
+            bool isValid = Validator.TryValidateObject(order, validationContext, validationResults, true);
+
+            // Act
+            var result = _controller.Index(order) as ViewResult;
+
+            // Assert
+            Assert.False(isValid, "Model should be invalid when City is missing");
+        }
+
+        [Fact]
+        //Cart is not empty and form is not valid : ZipCode is missing ErrorMissingZipCode
+        public void Index_MissingZip_ModelStateIsNotValid()
+        {
+            // Arrange
+            Cart cart = new Cart();
+            Product product = new Product
+            {
+                Name = "ProductNameTest",
+                Price = 1.00,
+                Quantity = 1,
+                Description = "DescriptionTest",
+                Details = "DetailsTest",
+                Id = 1,
+            };
+
+            cart.AddItem(product, 1);
+            _controller = new OrderController(cart, _mockOrderService.Object, _mockLocalizer.Object);
+            var order = new OrderViewModel()
+            {
+                Name = "NameTest",
+                Address = "AdresseTest",
+                City = "CityTest",
+                Zip = "",
+                Country = "CountryTest",
+            };
+
+            var validationContext = new ValidationContext(order, null, null);
+            var validationResults = new List<ValidationResult>();
+            bool isValid = Validator.TryValidateObject(order, validationContext, validationResults, true);
+
+            // Act
+            var result = _controller.Index(order) as ViewResult;
+
+            // Assert
+            Assert.False(isValid, "Model should be invalid when Zip is missing");
+        }
+
+        [Fact]
+        //Cart is not empty and form is not valid : Country is missing ErrorMissingCountry
+        public void Index_MissingCountry_ModelStateIsNotValid()
+        {
+            // Arrange
+            Cart cart = new Cart();
+            Product product = new Product
+            {
+                Name = "ProductNameTest",
+                Price = 1.00,
+                Quantity = 1,
+                Description = "DescriptionTest",
+                Details = "DetailsTest",
+                Id = 1,
+            };
+
+            cart.AddItem(product, 1);
+            _controller = new OrderController(cart, _mockOrderService.Object, _mockLocalizer.Object);
+            var order = new OrderViewModel()
+            {
+                Name = "NameTest",
+                Address = "AdresseTest",
+                City = "CityTest",
+                Zip = "ZipTest",
+                Country = "",
+            };
+
+            var validationContext = new ValidationContext(order, null, null);
+            var validationResults = new List<ValidationResult>();
+            bool isValid = Validator.TryValidateObject(order, validationContext, validationResults, true);
+
+            // Act
+            var result = _controller.Index(order) as ViewResult;
+
+            // Assert
+            Assert.False(isValid, "Model should be invalid when Country is missing");
+        }
+
     }
 
 }
