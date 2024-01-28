@@ -85,8 +85,6 @@ namespace P2FixAnAppDotNetCode.Tests
             Assert.True(_controller.ModelState.IsValid, "Not Empty Cart and Model is Valid");
         }
 
-
-        /*
         //TODO
         [Fact]
         //Cart is not empty and form is not valid : name is missing ErrorMissingName
@@ -94,12 +92,21 @@ namespace P2FixAnAppDotNetCode.Tests
         {
             // Arrange
             Cart cart = new Cart();
-            Product product = new Product();
+            Product product = new Product
+            {
+                Name = "ProductNameTest",
+                Price = 1.00,
+                Quantity = 1,
+                Description = "DescriptionTest",
+                Details = "DetailsTest",
+                Id = 1,
+            };
+
             cart.AddItem(product, 1);
             _controller = new OrderController(cart, _mockOrderService.Object, _mockLocalizer.Object);
             var order = new OrderViewModel()
             {
-                Name = "",
+                Name = "test",
                 Address = "AdresseTest",
                 City = "VilleTest",
                 Zip = "ZipTest",
@@ -107,16 +114,22 @@ namespace P2FixAnAppDotNetCode.Tests
             };
 
             // Act
+
             var result = _controller.Index(order) as ViewResult;
             var modelStateValidity = _controller.ModelState.GetValidationState(order.Name);
-            modelStateValidity.
+            bool ErrorMissingName = (modelStateValidity != ModelValidationState.Valid);
 
             // Assert
-            Assert.False(modelStateValidity, "Not Empty Cart and Name is missing");
+            Assert.True(ErrorMissingName, "Not Empty Cart and Name is missing");
 
-       
+            //var nameErrors = _controller.ModelState["Name"]?.Errors;
+            ////Assert.NotNull(nameErrors);
+            //Assert.NotEmpty(nameErrors);
+            //Assert.Contains(nameErrors, e => e.ErrorMessage == "Error message for missing name");
+
+
+
         }
-        */
     }
 
 }
