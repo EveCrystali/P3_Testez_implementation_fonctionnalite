@@ -1,31 +1,91 @@
-﻿using Xunit;
+﻿using Microsoft.AspNetCore.Mvc;
+using P3AddNewFunctionalityDotNetCore.Controllers;
+using P3AddNewFunctionalityDotNetCore.Models.Entities;
+using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
+using P3AddNewFunctionalityDotNetCore.Models;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using Xunit;
+using System;
+using Microsoft.Extensions.Localization;
+using Moq;
+using P3AddNewFunctionalityDotNetCore.Models.Services;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests
 {
     public class ProductServiceTests
     {
-        /// <summary>
-        /// Take this test method as a template to write your test method.
-        /// A test method must check if a definite method does its job:
-        /// returns an expected value from a particular set of parameters
-        /// </summary>
+
+        private Mock<IProductService> _productService;
+        private Mock <ILanguageService> _languageService;
+        private ProductController _productController;
+
+
         [Fact]
-        public void ExampleMethod()
+        // Tests the scenario where a product is added and it should be added to the list
+        public void Create_Add1Product_ProductAddedInList()
         {
-            // Arrange
-
-            // Act
 
 
-            // Assert
-            Assert.Equal(1, 1);
+        }
+
+        [Fact]
+        // Tests the scenario where a product is added with a missing product name and the model state should be invalid
+        public void Create_Add1ProductNameMissing_ModelStateInvalid()
+        {
+
+
+        }
+
+        [Fact]
+        // Tests the scenario where a product is added with a missing product price and the model state should be invalid
+        public void Create_Add1ProductPriceMissing_ModelStateInvalid()
+        {
+
+
+        }
+
+        [Fact]
+        // Tests the scenario where a product is added with a non-decimal product price and the model state should be invalid
+        public void Create_Add1ProductPriceNotDecimal_ModelStateInvalid()
+        {
+
+
+        }
+
+        [Fact]
+        // Tests the scenario where a product is added with a product price not greater than zero and the model state should be invalid
+        public void Create_Add1ProductPriceotGreaterThanZero_ModelStateInvalid()
+        {
+
+
+        }
+
+        [Fact]
+        // Tests the scenario where a product is added with a missing product quantity and the model state should be invalid
+        public void Create_Add1ProductQuantityMissing_ModelStateInvalid()
+        {
+
+
+        }
+
+        [Fact]
+        // Tests the scenario where a product is added with a non-numeric product quantity and the model state should be invalid
+        public void Create_Add1ProductQuantityNotANumber_ModelStateInvalid()
+        {
+
+
+        }
+
+        [Fact]
+        // Tests the scenario where a product is added with a product quantity not greater than zero and the model state should be invalid
+        public void Create_Add1ProductQuantityNotGreaterThanZero_ModelStateInvalid()
+        {
+
+
         }
 
 
 
-
-
-
-        // TODO write test methods to ensure a correct coverage of all possibilities
     }
 }
