@@ -12,6 +12,8 @@ using Moq;
 using P3AddNewFunctionalityDotNetCore.Models.Services;
 using System.Drawing;
 using P3AddNewFunctionalityDotNetCore.Models.Repositories;
+using System.Globalization;
+using static P3AddNewFunctionalityDotNetCore.Models.Services.ProductService;
 
 
 namespace P3AddNewFunctionalityDotNetCore.Tests
@@ -38,12 +40,12 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         }
 
         [Fact]
-        // TODO Tests the scenario where a product is added and it should be added to the list
+        // TODO Tests the differents scenarios where a product is added and it should be added to the list
         public void Create_Add1Product_ProductAddedInList()
         {
 
-            ProductViewModel product = new ProductViewModel()
-            {
+            ProductViewModel product1 = new ProductViewModel()
+            {   //Decimal dot
                 Name = "NameTest",
                 Price = "1.00",
                 Stock = "1",
@@ -52,22 +54,112 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 Id = 1
             };
 
+            ProductViewModel product2 = new ProductViewModel()
+            {   //Decimal comma
+                Name = "NameTest",
+                Price = "1,00",
+                Stock = "1",
+                Description = "DescriptionTest",
+                Details = "DetailsTest",
+                Id = 2
+            };
+
+            ProductViewModel product3 = new ProductViewModel()
+            {   //Decimal dot none
+                Name = "NameTest",
+                Price = "1.",
+                Stock = "1",
+                Description = "DescriptionTest",
+                Details = "DetailsTest",
+                Id = 3
+            };
+
+            ProductViewModel product4 = new ProductViewModel()
+            {   //Decimal comma none
+                Name = "NameTest",
+                Price = "1,",
+                Stock = "1",
+                Description = "DescriptionTest",
+                Details = "DetailsTest",
+                Id = 4
+            };
+
+            ProductViewModel product5 = new ProductViewModel()
+            {   //Integer
+                Name = "NameTest",
+                Price = "1",
+                Stock = "1",
+                Description = "DescriptionTest",
+                Details = "DetailsTest",
+                Id = 5
+            };
+
 
             // Act
-            var validationContext = new ValidationContext(product, null, null);
-            var validationResults = new List<ValidationResult>();
-            bool isValid = Validator.TryValidateObject(product, validationContext, validationResults, true);
-                // Create the product 
-                var result = _productController.Create(product) as RedirectToActionResult;
+            var validationContext1 = new ValidationContext(product1, null, null);
+            var validationResults1 = new List<ValidationResult>();
+            bool isValid1 = Validator.TryValidateObject(product1, validationContext1, validationResults1, true);
+            // Create the product1 
+            var result1 = _productController.Create(product1) as RedirectToActionResult;
+            
+            var validationContext2 = new ValidationContext(product2, null, null);
+            var validationResults2 = new List<ValidationResult>();
+            bool isValid2 = Validator.TryValidateObject(product2, validationContext2, validationResults2, true);
+            // Create the product2
+            var result2 = _productController.Create(product2) as RedirectToActionResult;
+
+            var validationContext3 = new ValidationContext(product3, null, null);
+            var validationResults3 = new List<ValidationResult>();
+            bool isValid3 = Validator.TryValidateObject(product3, validationContext3, validationResults3, true);
+            // Create the product3 
+            var result3 = _productController.Create(product3) as RedirectToActionResult;
+
+            var validationContext4 = new ValidationContext(product4, null, null);
+            var validationResults4 = new List<ValidationResult>();
+            bool isValid4 = Validator.TryValidateObject(product4, validationContext4, validationResults4, true);
+            // Create the product4
+            var result4 = _productController.Create(product4) as RedirectToActionResult;
+
+            var validationContext5 = new ValidationContext(product5, null, null);
+            var validationResults5 = new List<ValidationResult>();
+            bool isValid5 = Validator.TryValidateObject(product5, validationContext5, validationResults5, true);
+            // Create the product5
+            var result5 = _productController.Create(product5) as RedirectToActionResult;
 
 
             // Assert
+
             // Let's verify that the model is considered as: valid
-            Assert.True(isValid, "Model should be valid because every field is well filled");
-                // Let's verify that the product has been added to the list 
-                _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Once);
-                Assert.NotNull(result);
-                Assert.Equal("Admin", result.ActionName);
+            Assert.True(isValid1, "Model should be valid because every field is well filled");
+                // Let's verify that the product1 has been added to the list 
+                _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
+                Assert.NotNull(result1);
+                Assert.Equal("Admin", result1.ActionName);
+            
+            // Let's verify that the model is considered as: valid
+            Assert.True(isValid2, "Model should be valid because every field is well filled");
+                // Let's verify that the product2 has been added to the list 
+                _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
+                Assert.NotNull(result2);
+                Assert.Equal("Admin", result2.ActionName);
+
+            Assert.True(isValid3, "Model should be valid because every field is well filled");
+            // Let's verify that the product3 has been added to the list 
+            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
+            Assert.NotNull(result3);
+            Assert.Equal("Admin", result3.ActionName);
+
+            Assert.True(isValid4, "Model should be valid because every field is well filled");
+            // Let's verify that the product4 has been added to the list 
+            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
+            Assert.NotNull(result4);
+            Assert.Equal("Admin", result4.ActionName);
+
+            Assert.True(isValid5, "Model should be valid because every field is well filled");
+            // Let's verify that the product5 has been added to the list 
+            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
+            Assert.NotNull(result5);
+            Assert.Equal("Admin", result5.ActionName);
 
         }
 
@@ -475,6 +567,38 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
 
         }
 
+        [Fact]
+        public void TestParseDoubleWithAutoDecimalSeparator_WithComma()
+        {
+            // Arrange
+            string input = "123,45";
+            // Act
+            double result = ParseDoubleWithAutoDecimalSeparator(input);
+            // Assert
+            Assert.Equal(123.45, result);
+        }
+
+        [Fact]
+        public void TestParseDoubleWithAutoDecimalSeparator_WithDot()
+        {
+            // Arrange
+            string input = "123.45";
+            // Act
+            double result = ParseDoubleWithAutoDecimalSeparator(input);
+            // Assert
+            Assert.Equal(123.45, result);
+        }
+
+        [Fact]
+        public void TestParseDoubleWithAutoDecimalSeparator_WithoutSeparator()
+        {
+            // Arrange
+            string input = "12345";
+            // Act
+            double result = ParseDoubleWithAutoDecimalSeparator(input);
+            // Assert
+            Assert.Equal(12345, result);
+        }
 
         // TODO Tests the scenario where a product is added whereas it already exists in the list : only the quantity should be updated
 
