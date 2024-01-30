@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Localization;
 using P3AddNewFunctionalityDotNetCore.Models.Entities;
@@ -96,12 +97,34 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Services
             _productRepository.SaveProduct(productToAdd);
         }
 
+        public static double ParseDoubleWithAutoDecimalSeparator(string doubleUnknowCulture)
+        {
+            if (doubleUnknowCulture.Contains(","))
+            {
+                doubleUnknowCulture = doubleUnknowCulture.Replace(",", ".");
+                return Double.Parse(doubleUnknowCulture, CultureInfo.InvariantCulture);
+            }
+            if (doubleUnknowCulture.Contains("."))
+            {
+                return Double.Parse(doubleUnknowCulture, CultureInfo.InvariantCulture);
+            }
+            else 
+            { 
+                return Double.Parse(doubleUnknowCulture);
+            }
+        }
+
+
         private static Product MapToProductEntity(ProductViewModel product)
         {
+            //We need to check wich culture is used to parse decimal :"," or "."
+            
+            double priceParsed = ParseDoubleWithAutoDecimalSeparator(product.Price);
+
             Product productEntity = new Product
             {
                 Name = product.Name,
-                Price = double.Parse(product.Price),
+                Price = priceParsed,
                 Quantity = Int32.Parse(product.Stock),
                 Description = product.Description,
                 Details = product.Details
