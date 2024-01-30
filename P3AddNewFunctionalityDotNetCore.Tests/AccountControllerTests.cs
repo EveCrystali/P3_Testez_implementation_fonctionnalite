@@ -23,6 +23,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Security.Claims;
 using System.Drawing;
 using System.Security.Cryptography.Xml;
+using P3AddNewFunctionalityDotNetCore.Data;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests
 {
@@ -44,9 +45,10 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             var loginModel = new LoginModel
             {
                 Name = "Admin",
-                Password = "P@ssword123"
+                Password = "P@ssword123",
+                ReturnUrl = "/Admin/Index"
             };
-
+            
 
             var mockUserStore = new Mock<IUserStore<IdentityUser>>();
             var mockUserManager = new Mock<UserManager<IdentityUser>>(
@@ -73,8 +75,8 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             mockLocalizer.Setup(localizer => localizer["Invalid name or password"]).Returns(new LocalizedString("Invalid name or password", "Invalid credentials."));
 
 
-            mockUserManager.Setup(um => um.FindByNameAsync("Admin")).ReturnsAsync(testUser);
-            mockUserManager.Setup(um => um.CheckPasswordAsync(testUser, "P@ssword123")).ReturnsAsync(true);
+            mockUserManager.Setup(um => um.FindByNameAsync(loginModel.Name)).ReturnsAsync(testUser);
+            mockUserManager.Setup(um => um.CheckPasswordAsync(testUser, loginModel.Password)).ReturnsAsync(true);
 
             //mocksignInManager.Setup(x => x.PasswordSignInAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()))
                  //.ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
@@ -105,13 +107,21 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
 
             var validationContext = new ValidationContext(loginModel, null, null);
             var validationResults = new List<ValidationResult>();
-            bool isValid = Validator.TryValidateObject(loginModel, validationContext, validationResults, true);
 
+            bool isValid;
 
+            if (IdentitySeedData.AdminPassword == loginModel.Password && IdentitySeedData.AdminUser == loginModel.Name)
+            {
+                isValid = Validator.TryValidateObject(loginModel, validationContext, validationResults, true);
+            }
+            else
+            {
+                isValid = false;
+            }
 
             // Act
             var result = await controller.Login(loginModel);
-            if (result != null)
+            if (result != null && isValid == true)
             {
                 if (result is ViewResult)
                 {
@@ -121,25 +131,17 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 if (result is RedirectResult redirectResult)
                 {
                     // TODO Refactor
-                    // TODO Amend message
-                    // TODO Url = "/" or it should be loginModel.ReturnUrl -> test is always positive
-
-                    //var redirectToActionResult = result as RedirectResult;
-                    //Assert.Equal("Index", redirectToActionResult.ToString());
                     Assert.NotNull(result);
-                    string expectedUrl = loginModel.ReturnUrl ?? "/Admin/Index";
+                    string expectedUrl = "/Admin/Index";
                     Assert.Equal(expectedUrl, redirectResult.Url);
 
                 }
             }
-            //var redirectResult = result as ViewResult;
-            ////var redirectResult = result as RedirectToActionResult;
 
-            //// Assert
-            ////Assert.True(controller.ModelState.IsValid, "ModelState should be valid");
-            //Assert.NotNull(redirectResult);
-            ////Assert.Equal("/Admin/Index", redirectResult.ActionName);
-            //Assert.Equal("/Admin/Index", redirectResult.ViewName);
+            else 
+            {   
+                Assert.Fail("Invalid name or password");
+            }
         }
     
 
