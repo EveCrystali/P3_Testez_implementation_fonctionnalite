@@ -62,7 +62,6 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-//TODO Add Spain culture here
 var supportedCultures = new[] { "en-GB", "en-US", "en", "fr-FR", "fr", "es-ES", "es" };
 var localizationOptions = new RequestLocalizationOptions().SetDefaultCulture(supportedCultures[0])
     .AddSupportedCultures(supportedCultures.ToArray())
