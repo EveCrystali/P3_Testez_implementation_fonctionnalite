@@ -22,7 +22,7 @@ namespace P3AddNewFunctionalityDotNetCore.Models.ViewModels
 
 
         [Required(ErrorMessage = "MissingPrice")]
-        [RegularExpression(@"^\d+.\d{0,2}$", ErrorMessage = "PriceNotANumber")]
+        [RegularExpression(@"^\d+(.|,|)\d{0,2}", ErrorMessage = "PriceNotANumber")]
         [Range(0.01, double.MaxValue, ErrorMessage = "PriceNotGreaterThanZero")]
         public string Price { get; set; }
     }
