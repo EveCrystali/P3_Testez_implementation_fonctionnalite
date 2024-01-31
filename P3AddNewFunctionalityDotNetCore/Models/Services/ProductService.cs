@@ -87,7 +87,13 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Services
             Cart cart = (Cart) _cart;
             foreach (CartLine line in cart.Lines)
             {
-                _productRepository.UpdateProductStocks(line.Product.Id, line.Quantity);
+                int productId = line.Product.Id;
+                int quantityToRemove = line.Quantity;
+                Product products = GetProductById(productId);
+                if (products != null && products.Quantity >= quantityToRemove)
+                {
+                    _productRepository.UpdateProductStocks(productId, quantityToRemove);
+                }
             }
         }
 
@@ -97,20 +103,20 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Services
             _productRepository.SaveProduct(productToAdd);
         }
 
-        public static double ParseDoubleWithAutoDecimalSeparator(string doubleUnknowCulture)
+        public static double ParseDoubleWithAutoDecimalSeparator(string doubleUnknownCulture)
         {
-            if (doubleUnknowCulture.Contains(","))
+            if (doubleUnknownCulture.Contains(","))
             {
-                doubleUnknowCulture = doubleUnknowCulture.Replace(",", ".");
-                return Double.Parse(doubleUnknowCulture, CultureInfo.InvariantCulture);
+                doubleUnknownCulture = doubleUnknownCulture.Replace(",", ".");
+                return Double.Parse(doubleUnknownCulture, CultureInfo.InvariantCulture);
             }
-            if (doubleUnknowCulture.Contains("."))
+            if (doubleUnknownCulture.Contains("."))
             {
-                return Double.Parse(doubleUnknowCulture, CultureInfo.InvariantCulture);
+                return Double.Parse(doubleUnknownCulture, CultureInfo.InvariantCulture);
             }
             else 
             { 
-                return Double.Parse(doubleUnknowCulture);
+                return Double.Parse(doubleUnknownCulture);
             }
         }
 

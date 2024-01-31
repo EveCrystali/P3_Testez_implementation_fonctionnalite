@@ -11,11 +11,17 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using P3AddNewFunctionalityDotNetCore;
 using System.Linq;
+using P3AddNewFunctionalityDotNetCore.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// Register Cart as a scoped service
+builder.Services.AddScoped<Cart>();
+builder.Services.AddScoped<CartController>();
+
 
 builder.Services.AddLocalization(opts => { opts.ResourcesPath = "Resources"; });
 builder.Services.AddSingleton<ICart, Cart>();
