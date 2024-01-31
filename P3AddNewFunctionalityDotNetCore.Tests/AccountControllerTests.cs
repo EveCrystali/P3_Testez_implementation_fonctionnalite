@@ -153,7 +153,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 else if (result is RedirectResult redirectResult)
                 {
                     Assert.NotNull(result);
-                    const string expectedUrl = "/Admin/Index";
+                    const string expectedUrl = "/Product/Admin";
                     Assert.Equal(expectedUrl, redirectResult.Url);
                 }
             }

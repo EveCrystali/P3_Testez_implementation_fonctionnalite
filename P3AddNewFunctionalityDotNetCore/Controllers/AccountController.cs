@@ -44,7 +44,7 @@ namespace P3AddNewFunctionalityDotNetCore.Controllers
                     if ((await _signInManager.PasswordSignInAsync(user,
                     loginModel.Password, false, false)).Succeeded)
                     {
-                        return Redirect(loginModel.ReturnUrl ?? "/Admin/Index");                       
+                        return Redirect(loginModel.ReturnUrl ?? "/Product/Admin");                       
                     }
                 }
             }
