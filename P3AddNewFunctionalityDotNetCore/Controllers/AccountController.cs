@@ -48,7 +48,7 @@ namespace P3AddNewFunctionalityDotNetCore.Controllers
                     }
                 }
             }
-            ModelState.AddModelError("", _localizer["Invalid name or password"]);
+            ModelState.AddModelError("InvalidCredentials", _localizer["Invalid name or password"]);
             return View(loginModel);
         }
 
