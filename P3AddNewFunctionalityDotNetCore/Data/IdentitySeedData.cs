@@ -7,8 +7,8 @@ namespace P3AddNewFunctionalityDotNetCore.Data
 {
     public static class IdentitySeedData
     {
-        private const string AdminUser = "Admin";
-        private const string AdminPassword = "P@ssword123";
+        public const string AdminUser = "Admin";
+        public const string AdminPassword = "P@ssword123";
 
         public static async Task EnsurePopulated(IApplicationBuilder app)
         {
