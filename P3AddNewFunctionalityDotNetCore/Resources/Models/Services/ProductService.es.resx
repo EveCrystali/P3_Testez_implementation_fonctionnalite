@@ -117,25 +117,25 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="ErrorMissingName" xml:space="preserve">
-    <value>Veuillez saisir un nom</value>
+  <data name="MissingName" xml:space="preserve">
+    <value>Por favor ingresa un nombre</value>
   </data>
   <data name="MissingPrice" xml:space="preserve">
-    <value>Veuillez saisir un prix</value>
+    <value>Por favor introduce un precio</value>
   </data>
   <data name="MissingStock" xml:space="preserve">
-    <value>Veuillez saisir un stock</value>
+    <value>Por favor ingrese un valor de acciones</value>
   </data>
   <data name="PriceNotANumber" xml:space="preserve">
-    <value>La valeur saisie pour le prix doit être un nombre</value>
+    <value>El valor ingresado para el precio debe ser un número.</value>
   </data>
   <data name="PriceNotGreaterThanZero" xml:space="preserve">
-    <value>La prix doit être supérieur à zéro</value>
+    <value>El precio debe ser mayor que cero.</value>
   </data>
   <data name="StockNotAnInteger" xml:space="preserve">
-    <value>La valeur saisie pour le stock doit être un entier</value>
+    <value>El valor ingresado para la acción debe ser un número entero.</value>
   </data>
   <data name="StockNotGreaterThanZero" xml:space="preserve">
-    <value>La stock doit être supérieure à zéro</value>
+    <value>El stock debe ser mayor que cero.</value>
   </data>
 </root>

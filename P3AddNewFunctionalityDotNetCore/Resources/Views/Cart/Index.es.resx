@@ -117,25 +117,35 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="ErrorMissingName" xml:space="preserve">
-    <value>Veuillez saisir un nom</value>
+  <data name="Checkout" xml:space="preserve">
+    <value>Verificar</value>
   </data>
-  <data name="MissingPrice" xml:space="preserve">
-    <value>Veuillez saisir un prix</value>
+  <data name="ContinueShopping" xml:space="preserve">
+    <value>Seguir comprando</value>
   </data>
-  <data name="MissingStock" xml:space="preserve">
-    <value>Veuillez saisir un stock</value>
+  <data name="Item" xml:space="preserve">
+    <value>Artículo</value>
   </data>
-  <data name="PriceNotANumber" xml:space="preserve">
-    <value>La valeur saisie pour le prix doit être un nombre</value>
+  <data name="Price" xml:space="preserve">
+    <value>Precio</value>
   </data>
-  <data name="PriceNotGreaterThanZero" xml:space="preserve">
-    <value>La prix doit être supérieur à zéro</value>
+  <data name="Quantity" xml:space="preserve">
+    <value>Cantidad</value>
   </data>
-  <data name="StockNotAnInteger" xml:space="preserve">
-    <value>La valeur saisie pour le stock doit être un entier</value>
+  <data name="Remove" xml:space="preserve">
+    <value>Eliminar</value>
   </data>
-  <data name="StockNotGreaterThanZero" xml:space="preserve">
-    <value>La stock doit être supérieure à zéro</value>
+  <data name="Subtotal" xml:space="preserve">
+    <value>Total parcial</value>
+  </data>
+  <data name="Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="YourCart" xml:space="preserve">
+    <value>Su carrito</value>
+  </data>
+  <data name="Average" xml:space="preserve">
+    <value>Promedio</value>
+    <comment>Average</comment>
   </data>
 </root>

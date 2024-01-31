@@ -16,7 +16,7 @@
     <Content Remove="Models\ViewModel\**" />
     <Content Remove="Repository\**" />
     <EmbeddedResource Remove="Infrastructure\**" />
-    <EmbeddedResource Remove="Models\ViewModel\**" />
+    <EmbeddedResource Include="Models\ViewModel\**" />
     <EmbeddedResource Remove="Repository\**" />
     <None Remove="Infrastructure\**" />
     <None Remove="Models\ViewModel\**" />
@@ -29,15 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Remove="Resources\Models\Order.en.resx" />
-  </ItemGroup>
-
-  <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Resources\Models\Order.en.resx" />
   </ItemGroup>
 
   <ItemGroup>

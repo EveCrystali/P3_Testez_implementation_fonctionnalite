@@ -117,25 +117,19 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ErrorMissingAddress" xml:space="preserve">
+    <value>Por favor ingrese una direccion</value>
+  </data>
+  <data name="ErrorMissingCity" xml:space="preserve">
+    <value>Por favor ingresa el nombre de una ciudad</value>
+  </data>
+  <data name="ErrorMissingCountry" xml:space="preserve">
+    <value>Por favor ingresa el nombre de un país</value>
+  </data>
   <data name="ErrorMissingName" xml:space="preserve">
-    <value>Veuillez saisir un nom</value>
+    <value>Por favor ingresa un nombre</value>
   </data>
-  <data name="MissingPrice" xml:space="preserve">
-    <value>Veuillez saisir un prix</value>
-  </data>
-  <data name="MissingStock" xml:space="preserve">
-    <value>Veuillez saisir un stock</value>
-  </data>
-  <data name="PriceNotANumber" xml:space="preserve">
-    <value>La valeur saisie pour le prix doit être un nombre</value>
-  </data>
-  <data name="PriceNotGreaterThanZero" xml:space="preserve">
-    <value>La prix doit être supérieur à zéro</value>
-  </data>
-  <data name="StockNotAnInteger" xml:space="preserve">
-    <value>La valeur saisie pour le stock doit être un entier</value>
-  </data>
-  <data name="StockNotGreaterThanZero" xml:space="preserve">
-    <value>La stock doit être supérieure à zéro</value>
+  <data name="ErrorMissingZipCode" xml:space="preserve">
+    <value>Por favor introduce un código postal</value>
   </data>
 </root>

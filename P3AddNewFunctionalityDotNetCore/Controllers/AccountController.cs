@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
 
 namespace P3AddNewFunctionalityDotNetCore.Controllers
@@ -11,11 +12,12 @@ namespace P3AddNewFunctionalityDotNetCore.Controllers
     {
         private readonly UserManager<IdentityUser> _userManager;
         private readonly SignInManager<IdentityUser> _signInManager;
-        public AccountController(UserManager<IdentityUser> userMgr,
-        SignInManager<IdentityUser> signInMgr)
+        private readonly IStringLocalizer<AccountController> _localizer;
+        public AccountController(UserManager<IdentityUser> userMgr, SignInManager<IdentityUser> signInMgr, IStringLocalizer<AccountController> localizer)
         {
             _userManager = userMgr;
             _signInManager = signInMgr;
+            _localizer = localizer;
         }
 
         [AllowAnonymous]
@@ -42,11 +44,11 @@ namespace P3AddNewFunctionalityDotNetCore.Controllers
                     if ((await _signInManager.PasswordSignInAsync(user,
                     loginModel.Password, false, false)).Succeeded)
                     {
-                        return Redirect(loginModel.ReturnUrl ?? "/Admin/Index");                       
+                        return Redirect(loginModel.ReturnUrl ?? "/Product/Admin");                       
                     }
                 }
             }
-            ModelState.AddModelError("", "Invalid name or password");
+            ModelState.AddModelError("InvalidCredentials", _localizer["Invalid name or password"]);
             return View(loginModel);
         }
 
