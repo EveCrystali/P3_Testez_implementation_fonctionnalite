@@ -40,7 +40,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         }
 
         [Fact]
-        // Verify the differents scenarios where a product is added and it should be added to the list
+        // Verify the different scenarios where a product is added and it should be added to the list
         public void Create_Add1Product_ProductAddedInList()
         {
 

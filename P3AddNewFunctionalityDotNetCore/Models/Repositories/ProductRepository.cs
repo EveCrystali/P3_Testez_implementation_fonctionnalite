@@ -13,8 +13,9 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Repositories
 
         public ProductRepository(P3Referential context)
         {
-                _context = context;
+            _context = context;
         }
+
         public async Task<Product> GetProduct(int id)
         {
             var product = await _context.Product.SingleOrDefaultAsync(m => m.Id == id);
@@ -26,12 +27,13 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Repositories
             var products = await _context.Product.ToListAsync();
             return products;
         }
+
         /// <summary>
         /// Get all products from the inventory
         /// </summary>
         public IEnumerable<Product> GetAllProducts()
         {
-            IEnumerable<Product> productEntities= _context.Product.Where(p => p.Id > 0);
+            IEnumerable<Product> productEntities = _context.Product.Where(p => p.Id > 0);
             return productEntities.ToList();
         }
 
@@ -41,29 +43,27 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Repositories
         public void UpdateProductStocks(int id, int quantityToRemove)
         {
             Product product = _context.Product.First(p => p.Id == id);
-            product.Quantity = product.Quantity - quantityToRemove;
+            product.Quantity -= quantityToRemove;
 
             if (product.Quantity == 0)
+            {
                 _context.Product.Remove(product);
+            }
             else
             {
                 _context.Product.Update(product);
                 _context.SaveChanges();
-            }   
+            }
         }
 
         public void SaveProduct(Product product)
         {
             if (product != null)
             {
-               
-
                 _context.Product.Add(product);
                 _context.SaveChanges();
             }
         }
-
-  
 
         public void DeleteProduct(int id)
         {
