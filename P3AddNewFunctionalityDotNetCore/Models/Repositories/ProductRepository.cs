@@ -33,7 +33,7 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Repositories
         /// </summary>
         public IEnumerable<Product> GetAllProducts()
         {
-            IEnumerable<Product> productEntities = _context.Product.Where(p => p.Id > 0);
+            IEnumerable<Product> productEntities = _context.Product.Where(p => p.Id > 0 && p.Quantity > 0);
             return productEntities.ToList();
         }
 
