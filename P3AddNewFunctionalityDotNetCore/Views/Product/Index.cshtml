@@ -1,10 +1,20 @@
-﻿@using P3AddNewFunctionalityDotNetCore.Models.ViewModels
+﻿@using P3AddNewFunctionalityDotNetCore.Models
+@using P3AddNewFunctionalityDotNetCore.Controllers
+@using P3AddNewFunctionalityDotNetCore.Models.ViewModels
+@inject CartController CartController
 @model IEnumerable<P3AddNewFunctionalityDotNetCore.Models.ViewModels.ProductViewModel>
 @{
     ViewData["Title"] = Localizer["ProductList"];
 }
+<br />
 
-<br/>
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
 <div id="panel-body">
     <table class="table table-bordered table-striped table-sm">
         <thead>

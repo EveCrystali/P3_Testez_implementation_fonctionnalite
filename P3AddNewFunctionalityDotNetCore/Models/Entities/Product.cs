@@ -23,12 +23,5 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Entities
         public int Quantity { get; set; }
 
         public virtual ICollection<OrderLine> OrderLine { get; set; }
-
-
     }
-
-
-  
-
-    
 }

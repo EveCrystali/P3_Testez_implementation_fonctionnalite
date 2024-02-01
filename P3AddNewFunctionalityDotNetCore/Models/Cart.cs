@@ -1,4 +1,5 @@
 ﻿using P3AddNewFunctionalityDotNetCore.Models.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -13,16 +14,32 @@ namespace P3AddNewFunctionalityDotNetCore.Models
             _cartLines = new List<CartLine>();
         }
 
+        public int GetProductQuantityInCart(Product product)
+        {
+            CartLine line = _cartLines.FirstOrDefault(p => p.Product.Id == product.Id);
+            if (line == null) { return 0; }
+            else { return line.Quantity; }
+        }
+
         public void AddItem(Product product, int quantity)
         {
             CartLine line = _cartLines.FirstOrDefault(p => p.Product.Id == product.Id);
 
             if (line == null)
             {
+                if (product.Quantity < quantity)
+                {
+                    return;
+                }
                 _cartLines.Add(new CartLine { Product = product, Quantity = quantity });
             }
             else
             {
+                // Check if the total quantity in the cart exceeds the available stock
+                if (product.Quantity < line.Quantity + quantity)
+                {
+                    return;
+                }
                 line.Quantity += quantity;
             }
         }
