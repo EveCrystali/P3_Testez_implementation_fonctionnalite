@@ -101,7 +101,6 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Services
                 {
                     _cart.RemoveLine(product);
                     DeleteProduct(product.Id);
-                    // TODO Test this...
                 }
             }
         }

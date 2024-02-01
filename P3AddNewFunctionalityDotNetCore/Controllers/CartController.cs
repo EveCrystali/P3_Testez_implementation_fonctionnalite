@@ -53,7 +53,7 @@ namespace P3AddNewFunctionalityDotNetCore.Controllers
         public RedirectToActionResult RemoveFromCart(int id)
         {
             Product product = _productService.GetAllProducts()
-                .FirstOrDefault(p => p.Id == id);
+                .Find(p => p.Id == id);
 
             if (product != null)
             {
