@@ -1,6 +1,15 @@
 ﻿@model P3AddNewFunctionalityDotNetCore.Models.Cart
-
+@using P3AddNewFunctionalityDotNetCore.Controllers
+@inject OrderController  Controller
 <h2>@Localizer["YourCart"]</h2>
+
+@if (TempData["ErrorMessageProductNotAvailable"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessageProductNotAvailable"]
+    </div>
+}
+
 <table class="table table-bordered table-striped">
     <thead>
         <tr>

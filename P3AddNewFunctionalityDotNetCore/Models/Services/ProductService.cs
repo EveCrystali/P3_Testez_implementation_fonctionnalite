@@ -152,6 +152,8 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Services
             // delete the product form the cart by using the specific method
             // => the choice is up to the student
 
+            // // Check if the product no longer exists in the cart, then return the index and an error message
+
             
 
             _cart.RemoveLine(GetProductById(id));
