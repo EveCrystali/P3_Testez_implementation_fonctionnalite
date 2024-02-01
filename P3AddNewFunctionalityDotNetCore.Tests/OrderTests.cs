@@ -44,7 +44,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 Name = "NomDeTest",
                 Address = "AdresseTest",
                 City = "VilleTest",
-                Zip = "ZipTest",
+                Zip = "75000",
                 Country = "PaysTest",
             };
 
@@ -79,7 +79,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 Name = "NomDeTest",
                 Address = "AdresseTest",
                 City = "VilleTest",
-                Zip = "ZipTest",
+                Zip = "75000",
                 Country = "PaysTest",
             };
 
@@ -112,7 +112,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 Name = "",
                 Address = "AdresseTest",
                 City = "VilleTest",
-                Zip = "ZipTest",
+                Zip = "75000",
                 Country = "CountryTest",
             };
 
@@ -149,7 +149,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 Name = "NameTest",
                 Address = "",
                 City = "VilleTest",
-                Zip = "ZipTest",
+                Zip = "75000",
                 Country = "CountryTest",
             };
 
@@ -186,7 +186,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 Name = "NameTest",
                 Address = "AdresseTest",
                 City = "",
-                Zip = "ZipTest",
+                Zip = "75000",
                 Country = "CountryTest",
             };
 
@@ -236,6 +236,43 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
 
             // Assert
             Assert.False(isValid, "Model should be invalid when Zip is missing");
+        }
+
+        [Fact]
+        public void Index_UnvalidZip_ModelStateIsNotValid()
+        {
+            // Arrange
+            Cart cart = new();
+            Product product = new()
+            {
+                Name = "ProductNameTest",
+                Price = 1.00,
+                Quantity = 1,
+                Description = "DescriptionTest",
+                Details = "DetailsTest",
+                Id = 1,
+            };
+
+            cart.AddItem(product, 1);
+            _controller = new OrderController(cart, _mockOrderService.Object, _mockLocalizer.Object);
+            var order = new OrderViewModel()
+            {
+                Name = "NameTest",
+                Address = "AdresseTest",
+                City = "CityTest",
+                Zip = "666",
+                Country = "CountryTest",
+            };
+
+            var validationContext = new ValidationContext(order, null, null);
+            var validationResults = new List<ValidationResult>();
+            bool isValid = Validator.TryValidateObject(order, validationContext, validationResults, true);
+
+            // Act
+            var result = _controller.Index(order) as ViewResult;
+
+            // Assert
+            Assert.False(isValid, "Model should be invalid when Zip is false");
         }
 
         [Fact]

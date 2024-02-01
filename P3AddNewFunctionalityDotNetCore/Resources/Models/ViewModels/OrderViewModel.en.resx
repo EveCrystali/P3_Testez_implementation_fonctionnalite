@@ -132,4 +132,7 @@
   <data name="ErrorMissingZipCode" xml:space="preserve">
     <value>Please enter the zip code</value>
   </data>
+  <data name="ErrorUnvalidZipCode" xml:space="preserve">
+    <value>Please enter a correct zip code format</value>
+  </data>
 </root>
