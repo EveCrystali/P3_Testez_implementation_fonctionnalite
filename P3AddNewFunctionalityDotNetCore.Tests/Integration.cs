@@ -2,22 +2,60 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using P3AddNewFunctionalityDotNetCore.Controllers;
 using P3AddNewFunctionalityDotNetCore.Data;
+using P3AddNewFunctionalityDotNetCore.Models.Repositories;
+using P3AddNewFunctionalityDotNetCore.Models;
+using P3AddNewFunctionalityDotNetCore.Models.Services;
 using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using P3AddNewFunctionalityDotNetCore.Models.Entities;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests
 {
     public class Integration
     {
         // 1. SETTING-UP
+
+        private readonly DbContextOptions<P3Referential> _options;
+
+        public Integration()
+        {
+            // Configuration de la base de données de test
+            _options = new DbContextOptionsBuilder<P3Referential>()
+                .UseInMemoryDatabase(databaseName: "TestDb")
+                .Options;
+
+            // Initialisation des données de départ
+            InitializeSeedData();
+        }
+
+        private void InitializeSeedData()
+        {
+            var serviceCollection = new ServiceCollection();
+            // Configurez ici les services nécessaires pour SeedData.Initialize
+            serviceCollection.AddDbContext<P3Referential>(options =>
+                options.UseInMemoryDatabase("TestDb"));
+
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+
+            using var context = new P3Referential(_options, null);
+            if (!context.Product.Any())
+            {
+                SeedData.Initialize(serviceProvider, null); // Utilisez serviceProvider ici
+            }
+        }
 
         private AccountController _accountController;
 
@@ -103,18 +141,14 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             _accountController = new AccountController(
                 mockUserManager.Object, mockSignInManager.Object, mockLocalizer.Object);
 
-            // Mock HttpContext
             var httpContextMock = new Mock<HttpContext>();
-            // Set up necessary properties of HttpContext here
 
-            // Mock ControllerContext and assign the mocked HttpContext
             var controllerContext = new ControllerContext()
             {
                 HttpContext = httpContextMock.Object
             };
 
-            // Assign ControllerContext to SignInManager and Controller
-            mockSignInManager.Object.Context = httpContextMock.Object; // If Context property is available
+            mockSignInManager.Object.Context = httpContextMock.Object;
             _accountController.ControllerContext = controllerContext;
         }
 
@@ -138,19 +172,19 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 }
                 SetupMocking(loginModel, identityUser);
 
-                bool isValid = LoginValidator(loginModel);
+                bool isValid1 = LoginValidator(loginModel);
 
                 // Act
                 var result = await _accountController.Login(loginModel);
 
                 // Assert
-                if (isValid)
+                if (isValid1)
                 {   // Assertions for Invalid credentials
                     Assert.IsType<RedirectResult>(result); // Expect a redirect for valid credentials
-                    var redirectResult = result as RedirectResult;
-                    Assert.NotNull(redirectResult);
+                    var redirectResult1 = result as RedirectResult;
+                    Assert.NotNull(redirectResult1);
                     const string expectedUrl = "/Product/Admin";
-                    Assert.Equal(expectedUrl, redirectResult.Url);
+                    Assert.Equal(expectedUrl, redirectResult1.Url);
                 }
                 else
                 {   // Assertions for valid credentials
@@ -161,5 +195,59 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 }
             }
         }
+
+        private Mock<IProductService> _mockproductService;
+        private Mock<ILanguageService> _mockLanguageService;
+        private Mock<IStringLocalizer<OrderController>> _mockLocalizer;
+        private ProductController _productController;
+        private Mock<IServiceProvider> _mockServiceProvider;
+
+        // 3. THE USER CREATES A NEW PRODUCT AND DELETE ONE
+        [Fact]
+        public void AfterLogingCreateAndDeleteOneProduct()
+        {
+            _mockLanguageService = new Mock<ILanguageService>();
+            _mockLocalizer = new Mock<IStringLocalizer<OrderController>>();
+
+            using var context = new P3Referential(_options, null);
+
+            var mockCart = new Mock<ICart>();
+            var mockProductRepository = new Mock<IProductRepository>();
+            var mockOrderRepository = new Mock<IOrderRepository>();
+            var mockLocalizer = new Mock<IStringLocalizer<ProductService>>();
+            //var _mockproductService = new Mock<IProductService>();
+
+            var productService = new ProductService(mockCart.Object, mockProductRepository.Object, mockOrderRepository.Object, mockLocalizer.Object);
+
+            _productController = new ProductController(productService, _mockLanguageService.Object);
+
+            var newProduct = new Product { /* initialisation du produit */ };
+            mockProductRepository.Setup(repo => repo.SaveProduct(It.IsAny<Product>())).Verifiable();
+
+            ProductViewModel product1 = new() // This product is well defined
+            {
+                Name = "NameTest",
+                Price = "1.00",
+                Stock = "1",
+                Description = "DescriptionTest",
+                Details = "DetailsTest",
+                Id = 1
+            };
+
+            // Act
+            var validationContext1 = new ValidationContext(product1, null, null);
+            var validationResults1 = new List<ValidationResult>();
+            bool isValid2 = Validator.TryValidateObject(product1, validationContext1, validationResults1, true);
+            var redirectResult2 = _productController.Create(product1) as RedirectToActionResult;
+
+            // Assert
+            Assert.True(isValid2, "Model should be valid because every field is well filled");
+            // TODO :_mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(1));
+            Assert.NotNull(redirectResult2);
+            Assert.Equal("Admin", redirectResult2.ActionName);
+            // TODO All verifications needed
+        }
+
+        //}
     }
 }
