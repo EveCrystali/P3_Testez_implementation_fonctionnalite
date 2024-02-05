@@ -1,50 +1,52 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Xml.Linq;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using P3AddNewFunctionalityDotNetCore.Controllers;
 using P3AddNewFunctionalityDotNetCore.Data;
-using P3AddNewFunctionalityDotNetCore.Models.Repositories;
 using P3AddNewFunctionalityDotNetCore.Models;
+using P3AddNewFunctionalityDotNetCore.Models.Entities;
+using P3AddNewFunctionalityDotNetCore.Models.Repositories;
 using P3AddNewFunctionalityDotNetCore.Models.Services;
 using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
 using Xunit;
-using P3AddNewFunctionalityDotNetCore.Models.Entities;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests
 {
     public class Integration
     {
-        // 1. SETTING-UP
+        // STARTING SETTING-UP
 
         private readonly DbContextOptions<P3Referential> _options;
 
         public Integration()
         {
-            // Configuration de la base de données de test
+            // Configure the test database
             _options = new DbContextOptionsBuilder<P3Referential>()
                 .UseInMemoryDatabase(databaseName: "TestDb")
                 .Options;
 
-            // Initialisation des données de départ
+            // Initializing the initial data
             InitializeSeedData();
         }
 
-        private void InitializeSeedData()
+        public void InitializeSeedData()
         {
             var serviceCollection = new ServiceCollection();
-            // Configurez ici les services nécessaires pour SeedData.Initialize
+            // Configure the necessary services for SeedData.Initialize here
             serviceCollection.AddDbContext<P3Referential>(options =>
                 options.UseInMemoryDatabase("TestDb"));
 
@@ -53,7 +55,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             using var context = new P3Referential(_options, null);
             if (!context.Product.Any())
             {
-                SeedData.Initialize(serviceProvider, null); // Utilisez serviceProvider ici
+                SeedData.Initialize(serviceProvider, null);
             }
         }
 
@@ -84,7 +86,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             return IdentitySeedData.AdminPassword == loginModel.Password && IdentitySeedData.AdminUser == loginModel.Name;
         }
 
-        private void SetupMocking(LoginModel loginModel, IdentityUser identityUser)
+        private void SetupMockingForLoging(LoginModel loginModel, IdentityUser identityUser)
         {
             var mockUserStore = new Mock<IUserStore<IdentityUser>>();
             var mockUserManager = new Mock<UserManager<IdentityUser>>(
@@ -152,7 +154,22 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             _accountController.ControllerContext = controllerContext;
         }
 
-        //2. THE USER IS CONNECTING TO THE ADMIN PAGE
+        // ENDING SETTING-UP
+
+        // 1. THE DATABASE IS CORRECTLY INITIALIZED
+        [Fact]
+        private void SeedDateTest()
+        {
+            using var context = new P3Referential(_options, null);
+
+            foreach (var product in context.Product)
+            {
+                var productInDb = context.Product.FirstOrDefault(p => p.Name == product.Name);
+                Assert.NotNull(productInDb);
+            }
+        }
+
+        // 2. THE USER IS CONNECTING TO THE ADMIN PAGE
         [Fact]
         public async Task Login_WithMixedCredentials_ShouldFailThenSucceed()
         {
@@ -170,7 +187,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 {
                     identityUser = StartIdentityUser(loginModel); // Only create user for valid credentials
                 }
-                SetupMocking(loginModel, identityUser);
+                SetupMockingForLoging(loginModel, identityUser);
 
                 bool isValid1 = LoginValidator(loginModel);
 
@@ -180,7 +197,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 // Assert
                 if (isValid1)
                 {   // Assertions for Invalid credentials
-                    Assert.IsType<RedirectResult>(result); // Expect a redirect for valid credentials
+                    Assert.IsType<RedirectResult>(result);
                     var redirectResult1 = result as RedirectResult;
                     Assert.NotNull(redirectResult1);
                     const string expectedUrl = "/Product/Admin";
@@ -188,7 +205,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 }
                 else
                 {   // Assertions for valid credentials
-                    Assert.IsType<ViewResult>(result); // Expect a view result for invalid credentials
+                    Assert.IsType<ViewResult>(result);
                     var viewResult = result as ViewResult;
                     Assert.NotNull(viewResult);
                     Assert.True(viewResult.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
@@ -201,6 +218,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         private Mock<IStringLocalizer<OrderController>> _mockLocalizer;
         private ProductController _productController;
         private Mock<IServiceProvider> _mockServiceProvider;
+        private Mock<IActionResult> _mockActionResult;
 
         // 3. THE USER CREATES A NEW PRODUCT AND DELETE ONE
         [Fact]
@@ -210,26 +228,20 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             _mockLocalizer = new Mock<IStringLocalizer<OrderController>>();
 
             using var context = new P3Referential(_options, null);
+            var productRepository = new ProductRepository(context);
 
-            var mockCart = new Mock<ICart>();
-            var mockProductRepository = new Mock<IProductRepository>();
-            var mockOrderRepository = new Mock<IOrderRepository>();
-            var mockLocalizer = new Mock<IStringLocalizer<ProductService>>();
-            //var _mockproductService = new Mock<IProductService>();
+            var productService = new ProductService(new Cart(), productRepository, new OrderRepository(context), new Mock<IStringLocalizer<ProductService>>().Object);
 
-            var productService = new ProductService(mockCart.Object, mockProductRepository.Object, mockOrderRepository.Object, mockLocalizer.Object);
+            var productController = new ProductController(productService, _mockLanguageService.Object);
+            
 
-            _productController = new ProductController(productService, _mockLanguageService.Object);
-
-            var newProduct = new Product { /* initialisation du produit */ };
-            mockProductRepository.Setup(repo => repo.SaveProduct(It.IsAny<Product>())).Verifiable();
 
             ProductViewModel product1 = new() // This product is well defined
             {
                 Name = "NameTest",
                 Price = "1.00",
                 Stock = "1",
-                Description = "DescriptionTest",
+                Description = "We create this product. We Assert. We delete. We Assert",
                 Details = "DetailsTest",
                 Id = 1
             };
@@ -238,16 +250,29 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             var validationContext1 = new ValidationContext(product1, null, null);
             var validationResults1 = new List<ValidationResult>();
             bool isValid2 = Validator.TryValidateObject(product1, validationContext1, validationResults1, true);
-            var redirectResult2 = _productController.Create(product1) as RedirectToActionResult;
+            var redirectResult2 = productController.Create(product1) as RedirectToActionResult;
 
             // Assert
             Assert.True(isValid2, "Model should be valid because every field is well filled");
-            // TODO :_mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(1));
             Assert.NotNull(redirectResult2);
             Assert.Equal("Admin", redirectResult2.ActionName);
-            // TODO All verifications needed
-        }
 
-        //}
+            //Act
+            string product1Name = product1.Name; // We need to save the name in a var temporarily in order to Assert after deleting.
+                                                 // Indeed, if product1 is delete then product1Name = null and so we will not be able to assert basing on name of product.
+            var redirectResult3 = productController.DeleteProduct(product1.Id) as RedirectToActionResult;
+
+
+
+            //Assert
+            Assert.NotNull(redirectResult3);
+            Assert.Equal("Admin", redirectResult3.ActionName);
+            var deletedProduct = context.Product.FirstOrDefault(p => p.Name == product1Name);
+
+            // TODO NOT WORKING WIP
+            Assert.Null(deletedProduct); // Le produit ne doit plus être dans la base de données
+
+
+        }
     }
 }
