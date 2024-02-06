@@ -52,10 +52,10 @@ namespace P3AddNewFunctionalityDotNetCore.Controllers
             return View(loginModel);
         }
 
-        public async Task<RedirectResult> Logout(string returnUrl = "/")
+        public async Task<RedirectResult> Logout()
         {
             await _signInManager.SignOutAsync();
-            return Redirect(returnUrl);
+            return Redirect("/");
         }
     }
 }

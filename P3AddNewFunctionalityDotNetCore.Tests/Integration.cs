@@ -23,6 +23,7 @@ using Xunit;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests
 {
+    [Collection("Test")]
     public class Integration
     {
         // STARTING SETTING-UP
@@ -214,7 +215,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
 
         // 3. THE USER CREATES A NEW PRODUCT AND DELETE ONE
         [Fact]
-        public void AfterLogingCreateAndDeleteOneProduct()
+        public void AfterLogingCreateAndDeleteOneProductTest()
         {
             _mockLanguageService = new Mock<ILanguageService>();
 
@@ -261,6 +262,25 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             Assert.NotNull(redirectResult3);
             Assert.Equal("Admin", redirectResult3.ActionName);
             Assert.Null(deletedProduct1);
+        }
+
+        // 4. THE USER LOG OUT
+
+        [Fact]
+        public async Task WhenClickOnLogoutButton_Logout()
+        {
+            // Arrange
+            LoginModel loginModel = StartLoginModel("Admin", "P@ssword123", null);
+            IdentityUser identityUser = StartIdentityUser(loginModel);
+            SetupMockingForLoging(loginModel, identityUser);
+            await _accountController.Login(loginModel);
+
+            // Act
+            RedirectResult result_clickOnLogoutButton_Logout = await _accountController.Logout();
+
+            // Assert
+            Assert.IsType<RedirectResult>(result_clickOnLogoutButton_Logout);
+            Assert.Equal("/", result_clickOnLogoutButton_Logout.Url);
         }
     }
 }

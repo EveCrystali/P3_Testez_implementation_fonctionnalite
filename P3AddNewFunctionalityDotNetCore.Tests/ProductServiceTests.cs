@@ -599,8 +599,5 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             // Assert
             Assert.Equal(12345, result);
         }
-
-        // TODO Tests the scenario where a product is added whereas it already exists in the list : only the quantity should be updated
-
     }
 }
