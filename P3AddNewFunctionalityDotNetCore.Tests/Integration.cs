@@ -1,12 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Configuration;
 using System.Linq;
+using System.Security.Principal;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
@@ -23,34 +27,36 @@ using Xunit;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests
 {
-    [Collection("Test")]
     public class Integration
     {
         // STARTING SETTING-UP
 
-        private readonly DbContextOptions<P3Referential> _options;
+        private readonly DbContextOptions<P3Referential> _optionsP3Referential;
+        private readonly DbContextOptions<AppIdentityDbContext> _optionsAppIdentity;
 
         public Integration()
         {
-            // Configure the test database
-            _options = new DbContextOptionsBuilder<P3Referential>()
-                .UseInMemoryDatabase(databaseName: "TestDb")
+            var configuration = new ConfigurationBuilder()
+                .AddJsonFile("appsettingsTest.json")
+                .Build();
+
+            _optionsP3Referential = new DbContextOptionsBuilder<P3Referential>()
+                .UseSqlServer(configuration.GetConnectionString("P3Referential"))
                 .Options;
 
-            // Initializing the initial data
+            _optionsAppIdentity = new DbContextOptionsBuilder<AppIdentityDbContext>()
+                .UseSqlServer(configuration.GetConnectionString("P3Identity"))
+                .Options;
+
             InitializeSeedData();
         }
 
         public void InitializeSeedData()
         {
             var serviceCollection = new ServiceCollection();
-            // Configure the necessary services for SeedData.Initialize here
-            serviceCollection.AddDbContext<P3Referential>(options =>
-                options.UseInMemoryDatabase("TestDb"));
-
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            using var context1 = new P3Referential(_options, null);
+            using var context1 = new P3Referential(_optionsP3Referential, null);
             if (!context1.Product.Any())
             {
                 SeedData.Initialize(serviceProvider, null);
@@ -158,7 +164,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         [Fact]
         private void SeedDateTest()
         {
-            using var context1 = new P3Referential(_options, null);
+            using var context1 = new P3Referential(_optionsP3Referential, null);
 
             foreach (var product in context1.Product)
             {
@@ -219,7 +225,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         {
             _mockLanguageService = new Mock<ILanguageService>();
 
-            using var context1 = new P3Referential(_options, null);
+            using var context1 = new P3Referential(_optionsP3Referential, null);
             var productRepository = new ProductRepository(context1);
 
             var productService = new ProductService(new Cart(), productRepository, new OrderRepository(context1), new Mock<IStringLocalizer<ProductService>>().Object);
@@ -255,7 +261,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             // 3.2 DELETE
             //Act
             var redirectResult3 = productController.DeleteProduct(product1.Id) as RedirectToActionResult;
-            using var context3 = new P3Referential(_options, null); // New context to refresh cache of Db
+            using var context3 = new P3Referential(_optionsP3Referential, null); // New context to refresh cache of Db
             var deletedProduct1 = context3.Product.FirstOrDefault(p => p.Id == product1.Id);
 
             // Assert
