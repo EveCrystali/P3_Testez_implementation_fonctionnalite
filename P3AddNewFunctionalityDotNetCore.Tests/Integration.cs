@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -52,8 +49,8 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
 
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            using var context = new P3Referential(_options, null);
-            if (!context.Product.Any())
+            using var context1 = new P3Referential(_options, null);
+            if (!context1.Product.Any())
             {
                 SeedData.Initialize(serviceProvider, null);
             }
@@ -160,11 +157,11 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         [Fact]
         private void SeedDateTest()
         {
-            using var context = new P3Referential(_options, null);
+            using var context1 = new P3Referential(_options, null);
 
-            foreach (var product in context.Product)
+            foreach (var product in context1.Product)
             {
-                var productInDb = context.Product.FirstOrDefault(p => p.Name == product.Name);
+                var productInDb = context1.Product.FirstOrDefault(p => p.Name == product.Name);
                 Assert.NotNull(productInDb);
             }
         }
@@ -176,8 +173,8 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             // Arrange
             var loginModels = new List<LoginModel>
             {
-                StartLoginModel("InvalidUser", "InvalidPassword", null), // First, he uses invalid credentials first
-                StartLoginModel("Admin", "P@ssword123", null) // Then he uses valid credentials
+                StartLoginModel("InvalidUser", "InvalidPassword", null),
+                StartLoginModel("Admin", "P@ssword123", null)
             };
 
             foreach (var loginModel in loginModels)
@@ -213,28 +210,20 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             }
         }
 
-        private Mock<IProductService> _mockproductService;
         private Mock<ILanguageService> _mockLanguageService;
-        private Mock<IStringLocalizer<OrderController>> _mockLocalizer;
-        private ProductController _productController;
-        private Mock<IServiceProvider> _mockServiceProvider;
-        private Mock<IActionResult> _mockActionResult;
 
         // 3. THE USER CREATES A NEW PRODUCT AND DELETE ONE
         [Fact]
         public void AfterLogingCreateAndDeleteOneProduct()
         {
             _mockLanguageService = new Mock<ILanguageService>();
-            _mockLocalizer = new Mock<IStringLocalizer<OrderController>>();
 
-            using var context = new P3Referential(_options, null);
-            var productRepository = new ProductRepository(context);
+            using var context1 = new P3Referential(_options, null);
+            var productRepository = new ProductRepository(context1);
 
-            var productService = new ProductService(new Cart(), productRepository, new OrderRepository(context), new Mock<IStringLocalizer<ProductService>>().Object);
+            var productService = new ProductService(new Cart(), productRepository, new OrderRepository(context1), new Mock<IStringLocalizer<ProductService>>().Object);
 
             var productController = new ProductController(productService, _mockLanguageService.Object);
-            
-
 
             ProductViewModel product1 = new() // This product is well defined
             {
@@ -243,36 +232,35 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 Stock = "1",
                 Description = "We create this product. We Assert. We delete. We Assert",
                 Details = "DetailsTest",
-                Id = 1
             };
 
+            // 3.1 CREATE
             // Act
             var validationContext1 = new ValidationContext(product1, null, null);
             var validationResults1 = new List<ValidationResult>();
             bool isValid2 = Validator.TryValidateObject(product1, validationContext1, validationResults1, true);
+
             var redirectResult2 = productController.Create(product1) as RedirectToActionResult;
+            productController.Create(product1);
+
+            Product createdProduct1 = context1.Product.FirstOrDefault(p => p.Name == product1.Name);
 
             // Assert
             Assert.True(isValid2, "Model should be valid because every field is well filled");
             Assert.NotNull(redirectResult2);
             Assert.Equal("Admin", redirectResult2.ActionName);
+            Assert.NotNull(createdProduct1);
 
+            // 3.2 DELETE
             //Act
-            string product1Name = product1.Name; // We need to save the name in a var temporarily in order to Assert after deleting.
-                                                 // Indeed, if product1 is delete then product1Name = null and so we will not be able to assert basing on name of product.
             var redirectResult3 = productController.DeleteProduct(product1.Id) as RedirectToActionResult;
+            using var context3 = new P3Referential(_options, null); // New context to refresh cache of Db
+            var deletedProduct1 = context3.Product.FirstOrDefault(p => p.Id == product1.Id);
 
-
-
-            //Assert
+            // Assert
             Assert.NotNull(redirectResult3);
             Assert.Equal("Admin", redirectResult3.ActionName);
-            var deletedProduct = context.Product.FirstOrDefault(p => p.Name == product1Name);
-
-            // TODO NOT WORKING WIP
-            Assert.Null(deletedProduct); // Le produit ne doit plus être dans la base de données
-
-
+            Assert.Null(deletedProduct1);
         }
     }
 }

@@ -35,7 +35,7 @@ namespace P3AddNewFunctionalityDotNetCore.Data
             modelBuilder.Entity<OrderLine>(entity =>
             {
                 entity.HasIndex(e => e.OrderId)
-                    .HasName("IX_OrderLineEntity_OrderEntityId");
+                    .HasDatabaseName("IX_OrderLineEntity_OrderEntityId");
 
                 entity.HasOne(d => d.Order)
                     .WithMany(p => p.OrderLine)

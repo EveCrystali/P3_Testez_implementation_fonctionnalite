@@ -1,286 +1,653 @@
-diff --git a/P3AddNewFunctionalityDotNetCore.Tests/AccountControllerTests.cs b/P3AddNewFunctionalityDotNetCore.Tests/AccountControllerTests.cs
-index 4925738..f2ef9c5 100644
---- a/P3AddNewFunctionalityDotNetCore.Tests/AccountControllerTests.cs
-+++ b/P3AddNewFunctionalityDotNetCore.Tests/AccountControllerTests.cs
-@@ -29,27 +29,35 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
- {
-     public class AccountControllerTests
-     {
--        private AccountController _controller;
-+        private AccountController _accountController;
+diff --git a/P3AddNewFunctionalityDotNetCore.Tests/Integration.cs b/P3AddNewFunctionalityDotNetCore.Tests/Integration.cs
+index 4dd2cf8..7302aba 100644
+--- a/P3AddNewFunctionalityDotNetCore.Tests/Integration.cs
++++ b/P3AddNewFunctionalityDotNetCore.Tests/Integration.cs
+@@ -1,11 +1,8 @@
+-﻿using System;
+-using System.Collections.Generic;
++﻿using System.Collections.Generic;
+ using System.ComponentModel.DataAnnotations;
+ using System.Linq;
+ using System.Threading.Tasks;
+-using System.Xml.Linq;
+ using Microsoft.AspNetCore.Authentication;
+-using Microsoft.AspNetCore.Authorization;
+ using Microsoft.AspNetCore.Http;
+ using Microsoft.AspNetCore.Identity;
+ using Microsoft.AspNetCore.Mvc;
+@@ -52,8 +49,8 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
  
--        [Fact]
--        public  async Task Login_WithValidModel_ReturnsRedirect()
-+        private static LoginModel StartLoginModel(string username, string password, string returnUrl)
-         {
--            // Arrange
--
--
--            var testUser = new IdentityUser
-+            var loginModel = new LoginModel
+             var serviceProvider = serviceCollection.BuildServiceProvider();
+ 
+-            using var context = new P3Referential(_options, null);
+-            if (!context.Product.Any())
++            using var context1 = new P3Referential(_options, null);
++            if (!context1.Product.Any())
              {
--                UserName = "Admin",
-+                Name = username,
-+                Password = password,
-+                ReturnUrl = returnUrl
-             };
-+            return loginModel;
-+        }
- 
--            var loginModel = new LoginModel
-+        private static IdentityUser StartIdentityUser(LoginModel loginModel)
-+        {
-+            var identityUser = new IdentityUser
-             {
--                Name = "Admin",
--                Password = "P@ssword123",
--                ReturnUrl = "/Admin/Index"
-+                UserName = loginModel.Name
-             };
--            
-+            return identityUser;
-+        }
- 
-+        public static bool LoginValidator(LoginModel loginModel)
-+        {
-+                return IdentitySeedData.AdminPassword == loginModel.Password && IdentitySeedData.AdminUser == loginModel.Name;
-+        }
-+
-+            private void SetupMocking(LoginModel loginModel, IdentityUser identityUser)
-+        {
-             var mockUserStore = new Mock<IUserStore<IdentityUser>>();
-             var mockUserManager = new Mock<UserManager<IdentityUser>>(
-                 mockUserStore.Object, null, null, null, null, null, null, null, null);
-@@ -71,25 +79,39 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
-                 mockUserConfirmation.Object);
- 
-             var mockLocalizer = new Mock<IStringLocalizer<AccountController>>();
--            
-+
-             mockLocalizer.Setup(localizer => localizer["Invalid name or password"]).Returns(new LocalizedString("Invalid name or password", "Invalid credentials."));
- 
-+            bool isValid = LoginValidator(loginModel);
- 
--            mockUserManager.Setup(um => um.FindByNameAsync(loginModel.Name)).ReturnsAsync(testUser);
--            mockUserManager.Setup(um => um.CheckPasswordAsync(testUser, loginModel.Password)).ReturnsAsync(true);
-+            if (isValid)
-+            {
-+                mockUserManager.Setup(um => um.FindByNameAsync(loginModel.Name)).ReturnsAsync(identityUser);
-+                mockUserManager.Setup(um => um.CheckPasswordAsync(identityUser, loginModel.Password)).ReturnsAsync(true);
- 
--            //mocksignInManager.Setup(x => x.PasswordSignInAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()))
--                 //.ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
--            mockSignInManager.Setup(m => m.PasswordSignInAsync(
--                It.IsAny<IdentityUser>(),
--                It.IsAny<string>(),
--                It.IsAny<bool>(),
--                It.IsAny<bool>()))
--                .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
-+                mockSignInManager.Setup(m => m.PasswordSignInAsync(
-+                    It.IsAny<IdentityUser>(),
-+                    It.IsAny<string>(),
-+                    It.IsAny<bool>(),
-+                    It.IsAny<bool>()))
-+                    .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
-+            }
- 
--            var controller = new AccountController(
--                mockUserManager.Object, mockSignInManager.Object, mockLocalizer.Object);
-+            if (!isValid)
-+            {
-+                mockUserManager.Setup(um => um.FindByNameAsync(loginModel.Name)).ReturnsAsync(identityUser);
-+                mockUserManager.Setup(um => um.CheckPasswordAsync(identityUser, loginModel.Password)).ReturnsAsync(false);
- 
-+                mockSignInManager.Setup(m => m.PasswordSignInAsync(
-+                    It.IsAny<IdentityUser>(),
-+                    It.IsAny<string>(),
-+                    It.IsAny<bool>(),
-+                    It.IsAny<bool>()))
-+                    .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Failed);
-+            }
-+
-+            _accountController = new AccountController(
-+                mockUserManager.Object, mockSignInManager.Object, mockLocalizer.Object);
- 
-             // Mock HttpContext
-             var httpContextMock = new Mock<HttpContext>();
-@@ -103,51 +125,136 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
- 
-             // Assign ControllerContext to SignInManager and Controller
-             mockSignInManager.Object.Context = httpContextMock.Object; // If Context property is available
--            controller.ControllerContext = controllerContext;
-+            _accountController.ControllerContext = controllerContext;
-+        }
-+
-+        [Fact]
-+        public async Task Login_WhenValidCredentials_LogsInAndRedirectsToAdminIndex()
-+        {
-+            // ARRANGE
- 
--            var validationContext = new ValidationContext(loginModel, null, null);
--            var validationResults = new List<ValidationResult>();
-+            LoginModel loginModel = StartLoginModel("Admin", "P@ssword123", null);
-+            IdentityUser identityUser = StartIdentityUser(loginModel);
-+            SetupMocking(loginModel, identityUser);
- 
--            bool isValid;
-+            bool isValid = LoginValidator(loginModel);
- 
--            if (IdentitySeedData.AdminPassword == loginModel.Password && IdentitySeedData.AdminUser == loginModel.Name)
--            {
--                isValid = Validator.TryValidateObject(loginModel, validationContext, validationResults, true);
--            }
--            else
--            {
--                isValid = false;
--            }
-+            // ACT
-+            var result = await _accountController.Login(loginModel);
- 
--            // Act
--            var result = await controller.Login(loginModel);
--            if (result != null && isValid == true)
-+            // ASSERT
-+
-+            if (result != null && isValid)
-             {
--                if (result is ViewResult)
-+                if (result is ViewResult viewResult)
-                 {
--                    var viewResult = result as ViewResult;
-                     Assert.Equal("Login", viewResult.ViewName);
-                 }
--                if (result is RedirectResult redirectResult)
-+                else if (result is RedirectResult redirectResult)
-                 {
--                    // TODO Refactor
-                     Assert.NotNull(result);
--                    string expectedUrl = "/Admin/Index";
-+                    const string expectedUrl = "/Admin/Index";
-                     Assert.Equal(expectedUrl, redirectResult.Url);
--
-                 }
+                 SeedData.Initialize(serviceProvider, null);
              }
--
--            else 
--            {   
-+            else
-+            {
-                 Assert.Fail("Invalid name or password");
+@@ -160,11 +157,11 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
+         [Fact]
+         private void SeedDateTest()
+         {
+-            using var context = new P3Referential(_options, null);
++            using var context1 = new P3Referential(_options, null);
+ 
+-            foreach (var product in context.Product)
++            foreach (var product in context1.Product)
+             {
+-                var productInDb = context.Product.FirstOrDefault(p => p.Name == product.Name);
++                var productInDb = context1.Product.FirstOrDefault(p => p.Name == product.Name);
+                 Assert.NotNull(productInDb);
              }
          }
--    
+@@ -176,8 +173,8 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
+             // Arrange
+             var loginModels = new List<LoginModel>
+             {
+-                StartLoginModel("InvalidUser", "InvalidPassword", null), // First, he uses invalid credentials first
+-                StartLoginModel("Admin", "P@ssword123", null) // Then he uses valid credentials
++                StartLoginModel("InvalidUser", "InvalidPassword", null),
++                StartLoginModel("Admin", "P@ssword123", null)
+             };
  
--        //[Fact]
--        //public void Login_WhenNamePasswordAreWrong_ReturnView()
--        //{
--        //}
-+        [Fact]
-+        public async Task Login_WhenInvalidCredentials_NotLogIn()
-+        {
-+            // ARRANGE - Different scenarios of invalid credentials
+             foreach (var loginModel in loginModels)
+@@ -213,28 +210,20 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
+             }
+         }
+ 
+-        private Mock<IProductService> _mockproductService;
+         private Mock<ILanguageService> _mockLanguageService;
+-        private Mock<IStringLocalizer<OrderController>> _mockLocalizer;
+-        private ProductController _productController;
+-        private Mock<IServiceProvider> _mockServiceProvider;
+-        private Mock<IActionResult> _mockActionResult;
+ 
+         // 3. THE USER CREATES A NEW PRODUCT AND DELETE ONE
+         [Fact]
+         public void AfterLogingCreateAndDeleteOneProduct()
+         {
+             _mockLanguageService = new Mock<ILanguageService>();
+-            _mockLocalizer = new Mock<IStringLocalizer<OrderController>>();
+ 
+-            using var context = new P3Referential(_options, null);
+-            var productRepository = new ProductRepository(context);
++            using var context1 = new P3Referential(_options, null);
++            var productRepository = new ProductRepository(context1);
+ 
+-            var productService = new ProductService(new Cart(), productRepository, new OrderRepository(context), new Mock<IStringLocalizer<ProductService>>().Object);
++            var productService = new ProductService(new Cart(), productRepository, new OrderRepository(context1), new Mock<IStringLocalizer<ProductService>>().Object);
+ 
+             var productController = new ProductController(productService, _mockLanguageService.Object);
+-            
+-
+ 
+             ProductViewModel product1 = new() // This product is well defined
+             {
+@@ -243,36 +232,35 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
+                 Stock = "1",
+                 Description = "We create this product. We Assert. We delete. We Assert",
+                 Details = "DetailsTest",
+-                Id = 1
+             };
+ 
++            // 3.1 CREATE
+             // Act
+             var validationContext1 = new ValidationContext(product1, null, null);
+             var validationResults1 = new List<ValidationResult>();
+             bool isValid2 = Validator.TryValidateObject(product1, validationContext1, validationResults1, true);
 +
-+            // Username: WrongId, Password: WrongPassword
-+            LoginModel loginModel = StartLoginModel("WrongId", "WrongPassword", null);
-+            IdentityUser identityUser = StartIdentityUser(loginModel);
-+            SetupMocking(loginModel, identityUser);
+             var redirectResult2 = productController.Create(product1) as RedirectToActionResult;
++            productController.Create(product1);
 +
-+            // Username: "WrongId", Password: "P@ssword123"
-+            LoginModel loginModel2 = StartLoginModel("WrongId", "P@ssword123", null);
-+            IdentityUser identityUser2 = StartIdentityUser(loginModel2);
-+            SetupMocking   (loginModel2, identityUser2);
-+
-+            // Username: "Admin", Password: "WrongPassword"
-+            LoginModel loginModel3 = StartLoginModel("Admin", "WrongPassword", null);
-+            IdentityUser identityUser3 = StartIdentityUser(loginModel3);
-+            SetupMocking(loginModel3, identityUser3);
-+
-+            // Username: "", Password: ""
-+            LoginModel loginModel4 = StartLoginModel("", "", null);
-+            IdentityUser identityUser4 = StartIdentityUser(loginModel4);
-+            SetupMocking(loginModel4, identityUser4);
-+
-+            // Username: "", Password: "P@ssword123"
-+            LoginModel loginModel5 = StartLoginModel("", "P@ssword123", null);
-+            IdentityUser identityUser5 = StartIdentityUser(loginModel5);
-+            SetupMocking(loginModel5, identityUser5);
-+
-+            // Username: "Admin", Password: ""
-+            LoginModel loginModel6 = StartLoginModel("Admin", "", null);
-+            IdentityUser identityUser6 = StartIdentityUser(loginModel6);
-+            SetupMocking(loginModel6, identityUser6);
-+
-+            bool isValid = LoginValidator(loginModel);
-+            bool isValid2 = LoginValidator(loginModel2);
-+            bool isValid3 = LoginValidator(loginModel3);
-+            bool isValid4 = LoginValidator(loginModel4);
-+            bool isValid5 = LoginValidator(loginModel5);
-+            bool isValid6 = LoginValidator(loginModel6);
-+
-+            // ACT
-+            var result = await _accountController.Login(loginModel);
-+            var viewResult = result as ViewResult;
-+
-+            var result2 = await _accountController.Login(loginModel2);
-+            var viewResult2 = result2 as ViewResult;
-+
-+            var result3 = await _accountController.Login(loginModel3);
-+            var viewResult3 = result3 as ViewResult;
-+
-+            var result4 = await _accountController.Login(loginModel4);
-+            var viewResult4 = result4 as ViewResult;
-+
-+            var result5 = await _accountController.Login(loginModel5);
-+            var viewResult5 = result5 as ViewResult;
-+
-+            var result6 = await _accountController.Login(loginModel6);
-+            var viewResult6 = result6 as ViewResult;
-+
-+            // ASSERT
-+
-+            Assert.False(isValid, "ModelState should be Invalid because we have used wrong credentials");
-+            Assert.NotNull(result);
-+            Assert.IsType<ViewResult>(result);
-+            Assert.True(viewResult.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
-+
-+            Assert.False(isValid2, "ModelState should be Invalid because we have used wrong credentials");
-+            Assert.NotNull(result2);
-+            Assert.IsType<ViewResult>(result2);
-+            Assert.True(viewResult2.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
-+
-+            Assert.False(isValid3, "ModelState should be Invalid because we have used wrong credentials");
-+            Assert.NotNull(result3);
-+            Assert.IsType<ViewResult>(result3);
-+            Assert.True(viewResult3.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
-+
-+            Assert.False(isValid4, "ModelState should be Invalid because we have used wrong credentials");
-+            Assert.NotNull(result4);
-+            Assert.IsType<ViewResult>(result4);
-+            Assert.True(viewResult4.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
-+
-+            Assert.False(isValid5, "ModelState should be Invalid because we have used wrong credentials");
-+            Assert.NotNull(result5);
-+            Assert.IsType<ViewResult>(result5);
-+            Assert.True(viewResult5.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
-+
-+            Assert.False(isValid6, "ModelState should be Invalid because we have used wrong credentials");
-+            Assert.NotNull(result6);
-+            Assert.IsType<ViewResult>(result6);
-+            Assert.True(viewResult6.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
-+        }
++            Product createdProduct1 = context1.Product.FirstOrDefault(p => p.Name == product1.Name);
+ 
+             // Assert
+             Assert.True(isValid2, "Model should be valid because every field is well filled");
+             Assert.NotNull(redirectResult2);
+             Assert.Equal("Admin", redirectResult2.ActionName);
++            Assert.NotNull(createdProduct1);
+ 
++            // 3.2 DELETE
+             //Act
+-            string product1Name = product1.Name; // We need to save the name in a var temporarily in order to Assert after deleting.
+-                                                 // Indeed, if product1 is delete then product1Name = null and so we will not be able to assert basing on name of product.
+             var redirectResult3 = productController.DeleteProduct(product1.Id) as RedirectToActionResult;
++            using var context3 = new P3Referential(_options, null); // New context to refresh cache of Db
++            var deletedProduct1 = context3.Product.FirstOrDefault(p => p.Id == product1.Id);
+ 
+-
+-
+-            //Assert
++            // Assert
+             Assert.NotNull(redirectResult3);
+             Assert.Equal("Admin", redirectResult3.ActionName);
+-            var deletedProduct = context.Product.FirstOrDefault(p => p.Name == product1Name);
+-
+-            // TODO NOT WORKING WIP
+-            Assert.Null(deletedProduct); // Le produit ne doit plus être dans la base de données
+-
+-
++            Assert.Null(deletedProduct1);
+         }
      }
  }
 \ No newline at end of file
-diff --git a/P3AddNewFunctionalityDotNetCore/Controllers/AccountController.cs b/P3AddNewFunctionalityDotNetCore/Controllers/AccountController.cs
-index 93a49c5..92d0534 100644
---- a/P3AddNewFunctionalityDotNetCore/Controllers/AccountController.cs
-+++ b/P3AddNewFunctionalityDotNetCore/Controllers/AccountController.cs
-@@ -48,7 +48,7 @@ namespace P3AddNewFunctionalityDotNetCore.Controllers
-                     }
-                 }
-             }
--            ModelState.AddModelError("", _localizer["Invalid name or password"]);
-+            ModelState.AddModelError("InvalidCredentials", _localizer["Invalid name or password"]);
-             return View(loginModel);
-         }
+diff --git a/P3AddNewFunctionalityDotNetCore/Data/P3Referential.cs b/P3AddNewFunctionalityDotNetCore/Data/P3Referential.cs
+index 4859597..6fff592 100644
+--- a/P3AddNewFunctionalityDotNetCore/Data/P3Referential.cs
++++ b/P3AddNewFunctionalityDotNetCore/Data/P3Referential.cs
+@@ -35,7 +35,7 @@ namespace P3AddNewFunctionalityDotNetCore.Data
+             modelBuilder.Entity<OrderLine>(entity =>
+             {
+                 entity.HasIndex(e => e.OrderId)
+-                    .HasName("IX_OrderLineEntity_OrderEntityId");
++                    .HasDatabaseName("IX_OrderLineEntity_OrderEntityId");
  
+                 entity.HasOne(d => d.Order)
+                     .WithMany(p => p.OrderLine)
+diff --git a/P3AddNewFunctionalityDotNetCore/Models/Repositories/ProductRepository.cs b/P3AddNewFunctionalityDotNetCore/Models/Repositories/ProductRepository.cs
+index 7933f93..78e3bf4 100644
+--- a/P3AddNewFunctionalityDotNetCore/Models/Repositories/ProductRepository.cs
++++ b/P3AddNewFunctionalityDotNetCore/Models/Repositories/ProductRepository.cs
+@@ -67,7 +67,7 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Repositories
+ 
+         public void DeleteProduct(int id)
+         {
+-            Product product = _context.Product.First(p => p.Id == id);
++            Product product = _context.Product.FirstOrDefault(p => p.Id == id);
+             if (product != null)
+             {
+                 _context.Product.Remove(product);
+diff --git a/change.diff b/change.diff
+index d7bca37..e30706a 100644
+--- a/change.diff
++++ b/change.diff
+@@ -1,286 +1,234 @@
+-diff --git a/P3AddNewFunctionalityDotNetCore.Tests/AccountControllerTests.cs b/P3AddNewFunctionalityDotNetCore.Tests/AccountControllerTests.cs
+-index 4925738..f2ef9c5 100644
+---- a/P3AddNewFunctionalityDotNetCore.Tests/AccountControllerTests.cs
+-+++ b/P3AddNewFunctionalityDotNetCore.Tests/AccountControllerTests.cs
+-@@ -29,27 +29,35 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
++diff --git a/P3AddNewFunctionalityDotNetCore.Tests/Integration.cs b/P3AddNewFunctionalityDotNetCore.Tests/Integration.cs
++index eaf2ec6..4dd2cf8 100644
++--- a/P3AddNewFunctionalityDotNetCore.Tests/Integration.cs
+++++ b/P3AddNewFunctionalityDotNetCore.Tests/Integration.cs
++@@ -1,50 +1,52 @@
++-﻿using Microsoft.AspNetCore.Authentication;
+++﻿using System;
+++using System.Collections.Generic;
+++using System.ComponentModel.DataAnnotations;
+++using System.Linq;
+++using System.Threading.Tasks;
+++using System.Xml.Linq;
+++using Microsoft.AspNetCore.Authentication;
+++using Microsoft.AspNetCore.Authorization;
++ using Microsoft.AspNetCore.Http;
++ using Microsoft.AspNetCore.Identity;
++ using Microsoft.AspNetCore.Mvc;
++ using Microsoft.EntityFrameworkCore;
+++using Microsoft.Extensions.DependencyInjection;
++ using Microsoft.Extensions.Localization;
++ using Microsoft.Extensions.Logging;
++ using Microsoft.Extensions.Options;
++ using Moq;
++ using P3AddNewFunctionalityDotNetCore.Controllers;
++ using P3AddNewFunctionalityDotNetCore.Data;
++-using P3AddNewFunctionalityDotNetCore.Models.Repositories;
++ using P3AddNewFunctionalityDotNetCore.Models;
+++using P3AddNewFunctionalityDotNetCore.Models.Entities;
+++using P3AddNewFunctionalityDotNetCore.Models.Repositories;
++ using P3AddNewFunctionalityDotNetCore.Models.Services;
++ using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
++-using System;
++-using System.Collections.Generic;
++-using System.ComponentModel.DataAnnotations;
++-using System.Linq;
++-using System.Threading.Tasks;
++ using Xunit;
++-using P3AddNewFunctionalityDotNetCore.Models.Entities;
++-using Microsoft.Extensions.DependencyInjection;
++ 
++ namespace P3AddNewFunctionalityDotNetCore.Tests
+  {
+-     public class AccountControllerTests
++     public class Integration
+      {
+--        private AccountController _controller;
+-+        private AccountController _accountController;
++-        // 1. SETTING-UP
+++        // STARTING SETTING-UP
+  
+--        [Fact]
+--        public  async Task Login_WithValidModel_ReturnsRedirect()
+-+        private static LoginModel StartLoginModel(string username, string password, string returnUrl)
++         private readonly DbContextOptions<P3Referential> _options;
++ 
++         public Integration()
+          {
+--            // Arrange
+--
+--
+--            var testUser = new IdentityUser
+-+            var loginModel = new LoginModel
+-             {
+--                UserName = "Admin",
+-+                Name = username,
+-+                Password = password,
+-+                ReturnUrl = returnUrl
+-             };
+-+            return loginModel;
+-+        }
++-            // Configuration de la base de données de test
+++            // Configure the test database
++             _options = new DbContextOptionsBuilder<P3Referential>()
++                 .UseInMemoryDatabase(databaseName: "TestDb")
++                 .Options;
++ 
++-            // Initialisation des données de départ
+++            // Initializing the initial data
++             InitializeSeedData();
++         }
+  
+--            var loginModel = new LoginModel
+-+        private static IdentityUser StartIdentityUser(LoginModel loginModel)
+-+        {
+-+            var identityUser = new IdentityUser
++-        private void InitializeSeedData()
+++        public void InitializeSeedData()
++         {
++             var serviceCollection = new ServiceCollection();
++-            // Configurez ici les services nécessaires pour SeedData.Initialize
+++            // Configure the necessary services for SeedData.Initialize here
++             serviceCollection.AddDbContext<P3Referential>(options =>
++                 options.UseInMemoryDatabase("TestDb"));
++ 
++@@ -53,7 +55,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
++             using var context = new P3Referential(_options, null);
++             if (!context.Product.Any())
+              {
+--                Name = "Admin",
+--                Password = "P@ssword123",
+--                ReturnUrl = "/Admin/Index"
+-+                UserName = loginModel.Name
+-             };
+--            
+-+            return identityUser;
+-+        }
++-                SeedData.Initialize(serviceProvider, null); // Utilisez serviceProvider ici
+++                SeedData.Initialize(serviceProvider, null);
++             }
++         }
+  
+-+        public static bool LoginValidator(LoginModel loginModel)
+-+        {
+-+                return IdentitySeedData.AdminPassword == loginModel.Password && IdentitySeedData.AdminUser == loginModel.Name;
+-+        }
+-+
+-+            private void SetupMocking(LoginModel loginModel, IdentityUser identityUser)
+-+        {
++@@ -84,7 +86,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
++             return IdentitySeedData.AdminPassword == loginModel.Password && IdentitySeedData.AdminUser == loginModel.Name;
++         }
++ 
++-        private void SetupMocking(LoginModel loginModel, IdentityUser identityUser)
+++        private void SetupMockingForLoging(LoginModel loginModel, IdentityUser identityUser)
++         {
+              var mockUserStore = new Mock<IUserStore<IdentityUser>>();
+              var mockUserManager = new Mock<UserManager<IdentityUser>>(
+-                 mockUserStore.Object, null, null, null, null, null, null, null, null);
+-@@ -71,25 +79,39 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
+-                 mockUserConfirmation.Object);
++@@ -152,7 +154,22 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
++             _accountController.ControllerContext = controllerContext;
++         }
+  
+-             var mockLocalizer = new Mock<IStringLocalizer<AccountController>>();
+--            
++-        //2. THE USER IS CONNECTING TO THE ADMIN PAGE
+++        // ENDING SETTING-UP
+ +
+-             mockLocalizer.Setup(localizer => localizer["Invalid name or password"]).Returns(new LocalizedString("Invalid name or password", "Invalid credentials."));
+- 
+-+            bool isValid = LoginValidator(loginModel);
+- 
+--            mockUserManager.Setup(um => um.FindByNameAsync(loginModel.Name)).ReturnsAsync(testUser);
+--            mockUserManager.Setup(um => um.CheckPasswordAsync(testUser, loginModel.Password)).ReturnsAsync(true);
+-+            if (isValid)
+-+            {
+-+                mockUserManager.Setup(um => um.FindByNameAsync(loginModel.Name)).ReturnsAsync(identityUser);
+-+                mockUserManager.Setup(um => um.CheckPasswordAsync(identityUser, loginModel.Password)).ReturnsAsync(true);
+- 
+--            //mocksignInManager.Setup(x => x.PasswordSignInAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()))
+--                 //.ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
+--            mockSignInManager.Setup(m => m.PasswordSignInAsync(
+--                It.IsAny<IdentityUser>(),
+--                It.IsAny<string>(),
+--                It.IsAny<bool>(),
+--                It.IsAny<bool>()))
+--                .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
+-+                mockSignInManager.Setup(m => m.PasswordSignInAsync(
+-+                    It.IsAny<IdentityUser>(),
+-+                    It.IsAny<string>(),
+-+                    It.IsAny<bool>(),
+-+                    It.IsAny<bool>()))
+-+                    .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
+-+            }
+- 
+--            var controller = new AccountController(
+--                mockUserManager.Object, mockSignInManager.Object, mockLocalizer.Object);
+-+            if (!isValid)
+++        // 1. THE DATABASE IS CORRECTLY INITIALIZED
+++        [Fact]
+++        private void SeedDateTest()
+++        {
+++            using var context = new P3Referential(_options, null);
+++
+++            foreach (var product in context.Product)
+ +            {
+-+                mockUserManager.Setup(um => um.FindByNameAsync(loginModel.Name)).ReturnsAsync(identityUser);
+-+                mockUserManager.Setup(um => um.CheckPasswordAsync(identityUser, loginModel.Password)).ReturnsAsync(false);
+- 
+-+                mockSignInManager.Setup(m => m.PasswordSignInAsync(
+-+                    It.IsAny<IdentityUser>(),
+-+                    It.IsAny<string>(),
+-+                    It.IsAny<bool>(),
+-+                    It.IsAny<bool>()))
+-+                    .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Failed);
+++                var productInDb = context.Product.FirstOrDefault(p => p.Name == product.Name);
+++                Assert.NotNull(productInDb);
+ +            }
+-+
+-+            _accountController = new AccountController(
+-+                mockUserManager.Object, mockSignInManager.Object, mockLocalizer.Object);
+- 
+-             // Mock HttpContext
+-             var httpContextMock = new Mock<HttpContext>();
+-@@ -103,51 +125,136 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
+- 
+-             // Assign ControllerContext to SignInManager and Controller
+-             mockSignInManager.Object.Context = httpContextMock.Object; // If Context property is available
+--            controller.ControllerContext = controllerContext;
+-+            _accountController.ControllerContext = controllerContext;
+ +        }
+ +
+-+        [Fact]
+-+        public async Task Login_WhenValidCredentials_LogsInAndRedirectsToAdminIndex()
+-+        {
+-+            // ARRANGE
+- 
+--            var validationContext = new ValidationContext(loginModel, null, null);
+--            var validationResults = new List<ValidationResult>();
+-+            LoginModel loginModel = StartLoginModel("Admin", "P@ssword123", null);
+-+            IdentityUser identityUser = StartIdentityUser(loginModel);
+-+            SetupMocking(loginModel, identityUser);
+- 
+--            bool isValid;
+-+            bool isValid = LoginValidator(loginModel);
+- 
+--            if (IdentitySeedData.AdminPassword == loginModel.Password && IdentitySeedData.AdminUser == loginModel.Name)
+--            {
+--                isValid = Validator.TryValidateObject(loginModel, validationContext, validationResults, true);
+--            }
+--            else
+--            {
+--                isValid = false;
+--            }
+-+            // ACT
+-+            var result = await _accountController.Login(loginModel);
+- 
+--            // Act
+--            var result = await controller.Login(loginModel);
+--            if (result != null && isValid == true)
+-+            // ASSERT
+-+
+-+            if (result != null && isValid)
+-             {
+--                if (result is ViewResult)
+-+                if (result is ViewResult viewResult)
+++        // 2. THE USER IS CONNECTING TO THE ADMIN PAGE
++         [Fact]
++         public async Task Login_WithMixedCredentials_ShouldFailThenSucceed()
++         {
++@@ -170,7 +187,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
+                  {
+--                    var viewResult = result as ViewResult;
+-                     Assert.Equal("Login", viewResult.ViewName);
++                     identityUser = StartIdentityUser(loginModel); // Only create user for valid credentials
+                  }
+--                if (result is RedirectResult redirectResult)
+-+                else if (result is RedirectResult redirectResult)
+-                 {
+--                    // TODO Refactor
+-                     Assert.NotNull(result);
+--                    string expectedUrl = "/Admin/Index";
+-+                    const string expectedUrl = "/Admin/Index";
+-                     Assert.Equal(expectedUrl, redirectResult.Url);
+--
++-                SetupMocking(loginModel, identityUser);
+++                SetupMockingForLoging(loginModel, identityUser);
++ 
++                 bool isValid1 = LoginValidator(loginModel);
++ 
++@@ -180,7 +197,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
++                 // Assert
++                 if (isValid1)
++                 {   // Assertions for Invalid credentials
++-                    Assert.IsType<RedirectResult>(result); // Expect a redirect for valid credentials
+++                    Assert.IsType<RedirectResult>(result);
++                     var redirectResult1 = result as RedirectResult;
++                     Assert.NotNull(redirectResult1);
++                     const string expectedUrl = "/Product/Admin";
++@@ -188,7 +205,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
+                  }
+-             }
++                 else
++                 {   // Assertions for valid credentials
++-                    Assert.IsType<ViewResult>(result); // Expect a view result for invalid credentials
+++                    Assert.IsType<ViewResult>(result);
++                     var viewResult = result as ViewResult;
++                     Assert.NotNull(viewResult);
++                     Assert.True(viewResult.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
++@@ -201,6 +218,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
++         private Mock<IStringLocalizer<OrderController>> _mockLocalizer;
++         private ProductController _productController;
++         private Mock<IServiceProvider> _mockServiceProvider;
+++        private Mock<IActionResult> _mockActionResult;
++ 
++         // 3. THE USER CREATES A NEW PRODUCT AND DELETE ONE
++         [Fact]
++@@ -210,26 +228,20 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
++             _mockLocalizer = new Mock<IStringLocalizer<OrderController>>();
++ 
++             using var context = new P3Referential(_options, null);
+++            var productRepository = new ProductRepository(context);
++ 
++-            var mockCart = new Mock<ICart>();
++-            var mockProductRepository = new Mock<IProductRepository>();
++-            var mockOrderRepository = new Mock<IOrderRepository>();
++-            var mockLocalizer = new Mock<IStringLocalizer<ProductService>>();
++-            //var _mockproductService = new Mock<IProductService>();
+ -
+--            else 
+--            {   
+-+            else
+-+            {
+-                 Assert.Fail("Invalid name or password");
+-             }
+-         }
+--    
++-            var productService = new ProductService(mockCart.Object, mockProductRepository.Object, mockOrderRepository.Object, mockLocalizer.Object);
+++            var productService = new ProductService(new Cart(), productRepository, new OrderRepository(context), new Mock<IStringLocalizer<ProductService>>().Object);
++ 
++-            _productController = new ProductController(productService, _mockLanguageService.Object);
+++            var productController = new ProductController(productService, _mockLanguageService.Object);
+++            
++ 
++-            var newProduct = new Product { /* initialisation du produit */ };
++-            mockProductRepository.Setup(repo => repo.SaveProduct(It.IsAny<Product>())).Verifiable();
++ 
++             ProductViewModel product1 = new() // This product is well defined
++             {
++                 Name = "NameTest",
++                 Price = "1.00",
++                 Stock = "1",
++-                Description = "DescriptionTest",
+++                Description = "We create this product. We Assert. We delete. We Assert",
++                 Details = "DetailsTest",
++                 Id = 1
++             };
++@@ -238,16 +250,29 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
++             var validationContext1 = new ValidationContext(product1, null, null);
++             var validationResults1 = new List<ValidationResult>();
++             bool isValid2 = Validator.TryValidateObject(product1, validationContext1, validationResults1, true);
++-            var redirectResult2 = _productController.Create(product1) as RedirectToActionResult;
+++            var redirectResult2 = productController.Create(product1) as RedirectToActionResult;
++ 
++             // Assert
++             Assert.True(isValid2, "Model should be valid because every field is well filled");
++-            // TODO :_mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(1));
++             Assert.NotNull(redirectResult2);
++             Assert.Equal("Admin", redirectResult2.ActionName);
++-            // TODO All verifications needed
++-        }
+  
+--        //[Fact]
+--        //public void Login_WhenNamePasswordAreWrong_ReturnView()
+--        //{
+ -        //}
+-+        [Fact]
+-+        public async Task Login_WhenInvalidCredentials_NotLogIn()
+-+        {
+-+            // ARRANGE - Different scenarios of invalid credentials
+-+
+-+            // Username: WrongId, Password: WrongPassword
+-+            LoginModel loginModel = StartLoginModel("WrongId", "WrongPassword", null);
+-+            IdentityUser identityUser = StartIdentityUser(loginModel);
+-+            SetupMocking(loginModel, identityUser);
+++            //Act
+++            string product1Name = product1.Name; // We need to save the name in a var temporarily in order to Assert after deleting.
+++                                                 // Indeed, if product1 is delete then product1Name = null and so we will not be able to assert basing on name of product.
+++            var redirectResult3 = productController.DeleteProduct(product1.Id) as RedirectToActionResult;
+ +
+-+            // Username: "WrongId", Password: "P@ssword123"
+-+            LoginModel loginModel2 = StartLoginModel("WrongId", "P@ssword123", null);
+-+            IdentityUser identityUser2 = StartIdentityUser(loginModel2);
+-+            SetupMocking   (loginModel2, identityUser2);
+ +
+-+            // Username: "Admin", Password: "WrongPassword"
+-+            LoginModel loginModel3 = StartLoginModel("Admin", "WrongPassword", null);
+-+            IdentityUser identityUser3 = StartIdentityUser(loginModel3);
+-+            SetupMocking(loginModel3, identityUser3);
+ +
+-+            // Username: "", Password: ""
+-+            LoginModel loginModel4 = StartLoginModel("", "", null);
+-+            IdentityUser identityUser4 = StartIdentityUser(loginModel4);
+-+            SetupMocking(loginModel4, identityUser4);
+++            //Assert
+++            Assert.NotNull(redirectResult3);
+++            Assert.Equal("Admin", redirectResult3.ActionName);
+++            var deletedProduct = context.Product.FirstOrDefault(p => p.Name == product1Name);
+ +
+-+            // Username: "", Password: "P@ssword123"
+-+            LoginModel loginModel5 = StartLoginModel("", "P@ssword123", null);
+-+            IdentityUser identityUser5 = StartIdentityUser(loginModel5);
+-+            SetupMocking(loginModel5, identityUser5);
+++            // TODO NOT WORKING WIP
+++            Assert.Null(deletedProduct); // Le produit ne doit plus être dans la base de données
+ +
+-+            // Username: "Admin", Password: ""
+-+            LoginModel loginModel6 = StartLoginModel("Admin", "", null);
+-+            IdentityUser identityUser6 = StartIdentityUser(loginModel6);
+-+            SetupMocking(loginModel6, identityUser6);
+ +
+-+            bool isValid = LoginValidator(loginModel);
+-+            bool isValid2 = LoginValidator(loginModel2);
+-+            bool isValid3 = LoginValidator(loginModel3);
+-+            bool isValid4 = LoginValidator(loginModel4);
+-+            bool isValid5 = LoginValidator(loginModel5);
+-+            bool isValid6 = LoginValidator(loginModel6);
+-+
+-+            // ACT
+-+            var result = await _accountController.Login(loginModel);
+-+            var viewResult = result as ViewResult;
+-+
+-+            var result2 = await _accountController.Login(loginModel2);
+-+            var viewResult2 = result2 as ViewResult;
+-+
+-+            var result3 = await _accountController.Login(loginModel3);
+-+            var viewResult3 = result3 as ViewResult;
+-+
+-+            var result4 = await _accountController.Login(loginModel4);
+-+            var viewResult4 = result4 as ViewResult;
+-+
+-+            var result5 = await _accountController.Login(loginModel5);
+-+            var viewResult5 = result5 as ViewResult;
+-+
+-+            var result6 = await _accountController.Login(loginModel6);
+-+            var viewResult6 = result6 as ViewResult;
+-+
+-+            // ASSERT
+-+
+-+            Assert.False(isValid, "ModelState should be Invalid because we have used wrong credentials");
+-+            Assert.NotNull(result);
+-+            Assert.IsType<ViewResult>(result);
+-+            Assert.True(viewResult.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
+-+
+-+            Assert.False(isValid2, "ModelState should be Invalid because we have used wrong credentials");
+-+            Assert.NotNull(result2);
+-+            Assert.IsType<ViewResult>(result2);
+-+            Assert.True(viewResult2.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
+-+
+-+            Assert.False(isValid3, "ModelState should be Invalid because we have used wrong credentials");
+-+            Assert.NotNull(result3);
+-+            Assert.IsType<ViewResult>(result3);
+-+            Assert.True(viewResult3.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
+-+
+-+            Assert.False(isValid4, "ModelState should be Invalid because we have used wrong credentials");
+-+            Assert.NotNull(result4);
+-+            Assert.IsType<ViewResult>(result4);
+-+            Assert.True(viewResult4.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
+-+
+-+            Assert.False(isValid5, "ModelState should be Invalid because we have used wrong credentials");
+-+            Assert.NotNull(result5);
+-+            Assert.IsType<ViewResult>(result5);
+-+            Assert.True(viewResult5.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
+-+
+-+            Assert.False(isValid6, "ModelState should be Invalid because we have used wrong credentials");
+-+            Assert.NotNull(result6);
+-+            Assert.IsType<ViewResult>(result6);
+-+            Assert.True(viewResult6.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
+ +        }
+      }
+  }
+ \ No newline at end of file
+-diff --git a/P3AddNewFunctionalityDotNetCore/Controllers/AccountController.cs b/P3AddNewFunctionalityDotNetCore/Controllers/AccountController.cs
+-index 93a49c5..92d0534 100644
+---- a/P3AddNewFunctionalityDotNetCore/Controllers/AccountController.cs
+-+++ b/P3AddNewFunctionalityDotNetCore/Controllers/AccountController.cs
+-@@ -48,7 +48,7 @@ namespace P3AddNewFunctionalityDotNetCore.Controllers
+-                     }
+-                 }
+-             }
+--            ModelState.AddModelError("", _localizer["Invalid name or password"]);
+-+            ModelState.AddModelError("InvalidCredentials", _localizer["Invalid name or password"]);
+-             return View(loginModel);
++diff --git a/P3AddNewFunctionalityDotNetCore/Models/Services/ProductService.cs b/P3AddNewFunctionalityDotNetCore/Models/Services/ProductService.cs
++index 73f45b6..4d4db64 100644
++--- a/P3AddNewFunctionalityDotNetCore/Models/Services/ProductService.cs
+++++ b/P3AddNewFunctionalityDotNetCore/Models/Services/ProductService.cs
++@@ -147,12 +147,7 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Services
+          }
+  
++         public void DeleteProduct(int id)
++-        {
++-            // TODO what happens if a product has been added to a cart and has been later removed from the inventory ?
++-            // delete the product form the cart by using the specific method
++-            // => the choice is up to the student
++-
++-            
+++        {         
++ 
++             _cart.RemoveLine(GetProductById(id));
++ 
