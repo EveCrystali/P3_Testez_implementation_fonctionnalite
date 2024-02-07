@@ -26,14 +26,23 @@ using P3AddNewFunctionalityDotNetCore.Models.Services;
 using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
 using Xunit;
 
-namespace P3AddNewFunctionalityDotNetCore.Tests
+namespace P3AddNewFunctionalityDotNetCore.Test
 {
-    public class Integration
+    [CollectionDefinition("Tests")]
+    public class TestCollection : ICollectionFixture<Integration>
+    {
+        // This class has no code and is never created. Its purpose is simply
+        // to be the place to apply [CollectionDefinition] and all the
+        // ICollectionFixture<> interfaces.
+    }
+
+    [Collection("Tests")]
+    public class Integration : IDisposable
     {
         // STARTING SETTING-UP
 
-        private readonly DbContextOptions<P3Referential> _optionsP3Referential;
-        private readonly DbContextOptions<AppIdentityDbContext> _optionsAppIdentity;
+        private readonly P3Referential _sharedContext;
+        private AccountController _accountController;
 
         public Integration()
         {
@@ -41,15 +50,22 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 .AddJsonFile("appsettingsTest.json")
                 .Build();
 
-            _optionsP3Referential = new DbContextOptionsBuilder<P3Referential>()
+            var _optionsP3Referential = new DbContextOptionsBuilder<P3Referential>()
                 .UseSqlServer(configuration.GetConnectionString("P3Referential"))
-                .Options;
+               .Options;
 
-            _optionsAppIdentity = new DbContextOptionsBuilder<AppIdentityDbContext>()
+            var _optionsAppIdentity = new DbContextOptionsBuilder<AppIdentityDbContext>()
                 .UseSqlServer(configuration.GetConnectionString("P3Identity"))
                 .Options;
 
+            _sharedContext = new P3Referential(_optionsP3Referential, configuration);
+
             InitializeSeedData();
+        }
+
+        public void Dispose()
+        {
+            _sharedContext?.Dispose();
         }
 
         public void InitializeSeedData()
@@ -57,14 +73,11 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             var serviceCollection = new ServiceCollection();
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            using var context1 = new P3Referential(_optionsP3Referential, null);
-            if (!context1.Product.Any())
+            if (!_sharedContext.Product.Any())
             {
                 SeedData.Initialize(serviceProvider, null);
             }
         }
-
-        private AccountController _accountController;
 
         private static LoginModel StartLoginModel(string username, string password, string returnUrl)
         {
@@ -165,11 +178,9 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         [Fact]
         private void SeedDateTest()
         {
-            using var context1 = new P3Referential(_optionsP3Referential, null);
-
-            foreach (var product in context1.Product)
+            foreach (var product in _sharedContext.Product)
             {
-                var productInDb = context1.Product.FirstOrDefault(p => p.Name == product.Name);
+                var productInDb = _sharedContext.Product.FirstOrDefault(p => p.Name == product.Name);
                 Assert.NotNull(productInDb);
             }
         }
@@ -217,17 +228,16 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 }
             }
         }
-      
+
         // 3. THE USER CREATES TWO NEW PRODUCTS AND DELETE ONE
         [Fact]
         public void AfterLogingCreateAndDeleteOneProductTest()
         {
             Mock<ILanguageService> _mockLanguageService = new Mock<ILanguageService>();
 
-            using var context1 = new P3Referential(_optionsP3Referential, null);
-            var productRepository = new ProductRepository(context1);
+            var productRepository = new ProductRepository(_sharedContext);
 
-            var productService = new ProductService(new Cart(), productRepository, new OrderRepository(context1), new Mock<IStringLocalizer<ProductService>>().Object);
+            var productService = new ProductService(new Cart(), productRepository, new OrderRepository(_sharedContext), new Mock<IStringLocalizer<ProductService>>().Object);
 
             var productController = new ProductController(productService, _mockLanguageService.Object);
 
@@ -263,8 +273,8 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             var redirectResult3 = productController.Create(productThatStaysInDb) as RedirectToActionResult;
             productController.Create(productThatStaysInDb);
 
-            Product createdProduct1 = context1.Product.FirstOrDefault(p => p.Name == productThatWillBeDeleted.Name);
-            Product createdProduct2 = context1.Product.FirstOrDefault(p => p.Name == productThatStaysInDb.Name);
+            Product createdProduct1 = _sharedContext.Product.FirstOrDefault(p => p.Name == productThatWillBeDeleted.Name);
+            Product createdProduct2 = _sharedContext.Product.FirstOrDefault(p => p.Name == productThatStaysInDb.Name);
 
             // Assert
             Assert.True(isValid2, "Model should be valid because every field is well filled");
@@ -281,14 +291,14 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             //Act
             var redirectResult4 = productController.DeleteProduct(productThatWillBeDeleted.Id) as RedirectToActionResult;
             productController.DeleteProduct(productThatWillBeDeleted.Id);
-            using var context2 = new P3Referential(_optionsP3Referential, null); // New context to refresh cache of Db
-            var deletedProduct1 = context2.Product.FirstOrDefault(p => p.Id == productThatWillBeDeleted.Id);
+            var deletedProduct1 = _sharedContext.Product.FirstOrDefault(p => p.Id == productThatWillBeDeleted.Id);
+            _sharedContext.SaveChanges();
+            _sharedContext.ChangeTracker.Clear();
 
             // Assert
             Assert.NotNull(redirectResult4);
             Assert.Equal("Admin", redirectResult4.ActionName);
             Assert.Null(deletedProduct1);
-
         }
 
         // 4. THE USER LOG OUT
@@ -313,16 +323,15 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         [Fact]
         public void CheckIfProductsStillExistInDatabase()
         {
-            using (var context = new P3Referential(_optionsP3Referential, null))
-            {
-                // Retrieve product1 and product2 from the database
-                var productThatWillBeDeletedCheck = context.Product.FirstOrDefault(p => p.Name == "productThatWillBeDeleted");
-                var productThatStaysInDbCheck = context.Product.FirstOrDefault(p => p.Name == "productThatStaysInDb");
+            _sharedContext.SaveChanges();
+            _sharedContext.ChangeTracker.Clear();
 
-                // Assert that product1 and product2 are not null
-                Assert.NotNull(productThatWillBeDeletedCheck);
-                Assert.NotNull(productThatStaysInDbCheck);
-            }
+            var productThatWillBeDeletedCheck = _sharedContext.Product.FirstOrDefault(p => p.Name == "productThatWillBeDeleted");
+            var productThatStaysInDbCheck = _sharedContext.Product.FirstOrDefault(p => p.Name == "productThatStaysInDb");
+
+            // Assert that product1 and product2 are not null
+            Assert.NotNull(productThatWillBeDeletedCheck);
+            Assert.NotNull(productThatStaysInDbCheck);
         }
 
         // 5. THE USER ADDS TWO PRODUCTS TO HIS CART
@@ -333,18 +342,17 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         public void AddTwoProductsToCart()
         {
             // Arrange
-            using var context = new P3Referential(_optionsP3Referential, null);
             Cart cart = new();
 
-            var ProductRepository = new ProductRepository(context);
-            var orderRepository = new OrderRepository(context);
+            var ProductRepository = new ProductRepository(_sharedContext);
+            var orderRepository = new OrderRepository(_sharedContext);
             var ProductService = new ProductService(cart, ProductRepository, orderRepository, new Mock<IStringLocalizer<ProductService>>().Object);
             var ProductController = new ProductController(ProductService, languageService);
 
             CartController cartController = new(cart, ProductService);
-            var produtToAdd1 = context.Product.FirstOrDefault(p => p.Name == "Echo Dot");
-            var produtToAdd2 = context.Product.FirstOrDefault(p => p.Name == "productThatWillBeDeleted");
-            var produtToAdd3 = context.Product.FirstOrDefault(p => p.Name == "productThatStaysInDb");
+            var produtToAdd1 = _sharedContext.Product.FirstOrDefault(p => p.Name == "Echo Dot");
+            var produtToAdd2 = _sharedContext.Product.FirstOrDefault(p => p.Name == "productThatWillBeDeleted");
+            var produtToAdd3 = _sharedContext.Product.FirstOrDefault(p => p.Name == "productThatStaysInDb");
             Assert.NotNull(produtToAdd1);
             Assert.NotNull(produtToAdd2);
 
