@@ -216,14 +216,12 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 }
             }
         }
-
-        private Mock<ILanguageService> _mockLanguageService;
-
-        // 3. THE USER CREATES A NEW PRODUCT AND DELETE ONE
+      
+        // 3. THE USER CREATES TWO NEW PRODUCTS AND DELETE ONE
         [Fact]
         public void AfterLogingCreateAndDeleteOneProductTest()
         {
-            _mockLanguageService = new Mock<ILanguageService>();
+            Mock<ILanguageService> _mockLanguageService = new Mock<ILanguageService>();
 
             using var context1 = new P3Referential(_optionsP3Referential, null);
             var productRepository = new ProductRepository(context1);
@@ -234,10 +232,19 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
 
             ProductViewModel product1 = new() // This product is well defined
             {
-                Name = "NameTest",
+                Name = "product1",
                 Price = "1.00",
-                Stock = "1",
-                Description = "We create this product. We Assert. We delete. We Assert",
+                Stock = "666",
+                Description = "We create this product. We Assert. We delete. We Assert.",
+                Details = "DetailsTest",
+            };
+
+            ProductViewModel product2 = new() // This product is well defined
+            {
+                Name = "product2",
+                Price = "1.00",
+                Stock = "666",
+                Description = "We create this product. We Assert.",
                 Details = "DetailsTest",
             };
 
@@ -246,11 +253,17 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             var validationContext1 = new ValidationContext(product1, null, null);
             var validationResults1 = new List<ValidationResult>();
             bool isValid2 = Validator.TryValidateObject(product1, validationContext1, validationResults1, true);
+            var validationContext2 = new ValidationContext(product2, null, null);
+            var validationResults2 = new List<ValidationResult>();
+            bool isValid3 = Validator.TryValidateObject(product2, validationContext2, validationResults2, true);
 
             var redirectResult2 = productController.Create(product1) as RedirectToActionResult;
             productController.Create(product1);
+            var redirectResult3 = productController.Create(product2) as RedirectToActionResult;
+            productController.Create(product2);
 
             Product createdProduct1 = context1.Product.FirstOrDefault(p => p.Name == product1.Name);
+            Product createdProduct2 = context1.Product.FirstOrDefault(p => p.Name == product2.Name);
 
             // Assert
             Assert.True(isValid2, "Model should be valid because every field is well filled");
@@ -258,15 +271,20 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             Assert.Equal("Admin", redirectResult2.ActionName);
             Assert.NotNull(createdProduct1);
 
-            // 3.2 DELETE
-            //Act
-            var redirectResult3 = productController.DeleteProduct(product1.Id) as RedirectToActionResult;
-            using var context3 = new P3Referential(_optionsP3Referential, null); // New context to refresh cache of Db
-            var deletedProduct1 = context3.Product.FirstOrDefault(p => p.Id == product1.Id);
-
-            // Assert
+            Assert.True(isValid3, "Model should be valid because every field is well filled");
             Assert.NotNull(redirectResult3);
             Assert.Equal("Admin", redirectResult3.ActionName);
+            Assert.NotNull(createdProduct2);
+
+            // 3.2 DELETE
+            //Act
+            var redirectResult4 = productController.DeleteProduct(product1.Id) as RedirectToActionResult;
+            using var context2 = new P3Referential(_optionsP3Referential, null); // New context to refresh cache of Db
+            var deletedProduct1 = context2.Product.FirstOrDefault(p => p.Id == product1.Id);
+
+            // Assert
+            Assert.NotNull(redirectResult4);
+            Assert.Equal("Admin", redirectResult4.ActionName);
             Assert.Null(deletedProduct1);
         }
 
@@ -288,5 +306,45 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             Assert.IsType<RedirectResult>(result_clickOnLogoutButton_Logout);
             Assert.Equal("/", result_clickOnLogoutButton_Logout.Url);
         }
+
+        // 5. THE USER ADDS TWO PRODUCTS TO HIS CART
+        private readonly ICart _cart;
+
+        private readonly IProductService _productService;
+        private readonly IProductRepository _productRepository;
+        private readonly IOrderRepository _orderRepository;
+        private readonly ILanguageService languageService;
+
+        [Fact]
+        public void AddTwoProductsToCart()
+        {
+            // Arrange
+            using var context3 = new P3Referential(_optionsP3Referential, null);
+            Cart cart = new();
+
+            var ProductRepository = new ProductRepository(context3);
+            var orderRepository = new OrderRepository(context3);
+            var ProductService = new ProductService(cart, ProductRepository, orderRepository, new Mock<IStringLocalizer<ProductService>>().Object);
+            var ProductController = new ProductController(ProductService, languageService);
+
+            CartController cartController = new(cart, ProductService);
+            var produtToAdd1 = context3.Product.FirstOrDefault(p => p.Name == "Echo Dot");
+            //var produtToAdd2 = context3.Product.FirstOrDefault(p => p.Id == product2.Id);
+            Assert.NotNull(produtToAdd1);
+            //Assert.NotNull(produtToAdd2);
+
+            // Act
+            var redirectResult5 = cartController.AddToCart(produtToAdd1.Id) as RedirectToActionResult;
+            cartController.AddToCart(produtToAdd1.Id);
+            //var redirectResult6 = cartController.AddToCart(produtToAdd2.Id) as RedirectToActionResult;
+            //cartController.AddToCart(produtToAdd2.Id);
+
+            // Assert
+            Assert.Equal(2, cart.Lines.Count());
+            Assert.Equal(produtToAdd1.Id, cart.Lines.First().Product.Id);
+            //Assert.Equal(produtToAdd2.Id, cart.Lines.ElementAt(1).Product.Id);
+        }
+
+        // 6 . THE USER REMOVES ONE PRODUCT FROM HIS CART
     }
 }
