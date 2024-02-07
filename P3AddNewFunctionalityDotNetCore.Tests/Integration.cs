@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Configuration;
 using System.Linq;
@@ -230,18 +231,18 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
 
             var productController = new ProductController(productService, _mockLanguageService.Object);
 
-            ProductViewModel product1 = new() // This product is well defined
+            ProductViewModel productThatWillBeDeleted = new() // This product is well defined
             {
-                Name = "product1",
+                Name = "productThatWillBeDeleted",
                 Price = "1.00",
                 Stock = "666",
                 Description = "We create this product. We Assert. We delete. We Assert.",
                 Details = "DetailsTest",
             };
 
-            ProductViewModel product2 = new() // This product is well defined
+            ProductViewModel productThatStaysInDb = new() // This product is well defined
             {
-                Name = "product2",
+                Name = "productThatStaysInDb",
                 Price = "1.00",
                 Stock = "666",
                 Description = "We create this product. We Assert.",
@@ -250,20 +251,20 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
 
             // 3.1 CREATE
             // Act
-            var validationContext1 = new ValidationContext(product1, null, null);
+            var validationContext1 = new ValidationContext(productThatWillBeDeleted, null, null);
             var validationResults1 = new List<ValidationResult>();
-            bool isValid2 = Validator.TryValidateObject(product1, validationContext1, validationResults1, true);
-            var validationContext2 = new ValidationContext(product2, null, null);
+            bool isValid2 = Validator.TryValidateObject(productThatWillBeDeleted, validationContext1, validationResults1, true);
+            var validationContext2 = new ValidationContext(productThatStaysInDb, null, null);
             var validationResults2 = new List<ValidationResult>();
-            bool isValid3 = Validator.TryValidateObject(product2, validationContext2, validationResults2, true);
+            bool isValid3 = Validator.TryValidateObject(productThatStaysInDb, validationContext2, validationResults2, true);
 
-            var redirectResult2 = productController.Create(product1) as RedirectToActionResult;
-            productController.Create(product1);
-            var redirectResult3 = productController.Create(product2) as RedirectToActionResult;
-            productController.Create(product2);
+            var redirectResult2 = productController.Create(productThatWillBeDeleted) as RedirectToActionResult;
+            productController.Create(productThatWillBeDeleted);
+            var redirectResult3 = productController.Create(productThatStaysInDb) as RedirectToActionResult;
+            productController.Create(productThatStaysInDb);
 
-            Product createdProduct1 = context1.Product.FirstOrDefault(p => p.Name == product1.Name);
-            Product createdProduct2 = context1.Product.FirstOrDefault(p => p.Name == product2.Name);
+            Product createdProduct1 = context1.Product.FirstOrDefault(p => p.Name == productThatWillBeDeleted.Name);
+            Product createdProduct2 = context1.Product.FirstOrDefault(p => p.Name == productThatStaysInDb.Name);
 
             // Assert
             Assert.True(isValid2, "Model should be valid because every field is well filled");
@@ -278,14 +279,16 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
 
             // 3.2 DELETE
             //Act
-            var redirectResult4 = productController.DeleteProduct(product1.Id) as RedirectToActionResult;
+            var redirectResult4 = productController.DeleteProduct(productThatWillBeDeleted.Id) as RedirectToActionResult;
+            productController.DeleteProduct(productThatWillBeDeleted.Id);
             using var context2 = new P3Referential(_optionsP3Referential, null); // New context to refresh cache of Db
-            var deletedProduct1 = context2.Product.FirstOrDefault(p => p.Id == product1.Id);
+            var deletedProduct1 = context2.Product.FirstOrDefault(p => p.Id == productThatWillBeDeleted.Id);
 
             // Assert
             Assert.NotNull(redirectResult4);
             Assert.Equal("Admin", redirectResult4.ActionName);
             Assert.Null(deletedProduct1);
+
         }
 
         // 4. THE USER LOG OUT
@@ -307,42 +310,57 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             Assert.Equal("/", result_clickOnLogoutButton_Logout.Url);
         }
 
-        // 5. THE USER ADDS TWO PRODUCTS TO HIS CART
-        private readonly ICart _cart;
+        [Fact]
+        public void CheckIfProductsStillExistInDatabase()
+        {
+            using (var context = new P3Referential(_optionsP3Referential, null))
+            {
+                // Retrieve product1 and product2 from the database
+                var productThatWillBeDeletedCheck = context.Product.FirstOrDefault(p => p.Name == "productThatWillBeDeleted");
+                var productThatStaysInDbCheck = context.Product.FirstOrDefault(p => p.Name == "productThatStaysInDb");
 
-        private readonly IProductService _productService;
-        private readonly IProductRepository _productRepository;
-        private readonly IOrderRepository _orderRepository;
+                // Assert that product1 and product2 are not null
+                Assert.NotNull(productThatWillBeDeletedCheck);
+                Assert.NotNull(productThatStaysInDbCheck);
+            }
+        }
+
+        // 5. THE USER ADDS TWO PRODUCTS TO HIS CART
+
         private readonly ILanguageService languageService;
 
         [Fact]
         public void AddTwoProductsToCart()
         {
             // Arrange
-            using var context3 = new P3Referential(_optionsP3Referential, null);
+            using var context = new P3Referential(_optionsP3Referential, null);
             Cart cart = new();
 
-            var ProductRepository = new ProductRepository(context3);
-            var orderRepository = new OrderRepository(context3);
+            var ProductRepository = new ProductRepository(context);
+            var orderRepository = new OrderRepository(context);
             var ProductService = new ProductService(cart, ProductRepository, orderRepository, new Mock<IStringLocalizer<ProductService>>().Object);
             var ProductController = new ProductController(ProductService, languageService);
 
             CartController cartController = new(cart, ProductService);
-            var produtToAdd1 = context3.Product.FirstOrDefault(p => p.Name == "Echo Dot");
-            //var produtToAdd2 = context3.Product.FirstOrDefault(p => p.Id == product2.Id);
+            var produtToAdd1 = context.Product.FirstOrDefault(p => p.Name == "Echo Dot");
+            var produtToAdd2 = context.Product.FirstOrDefault(p => p.Name == "productThatWillBeDeleted");
+            var produtToAdd3 = context.Product.FirstOrDefault(p => p.Name == "productThatStaysInDb");
             Assert.NotNull(produtToAdd1);
-            //Assert.NotNull(produtToAdd2);
+            Assert.NotNull(produtToAdd2);
 
             // Act
             var redirectResult5 = cartController.AddToCart(produtToAdd1.Id) as RedirectToActionResult;
             cartController.AddToCart(produtToAdd1.Id);
-            //var redirectResult6 = cartController.AddToCart(produtToAdd2.Id) as RedirectToActionResult;
-            //cartController.AddToCart(produtToAdd2.Id);
+            var redirectResult6 = cartController.AddToCart(produtToAdd2.Id) as RedirectToActionResult;
+            cartController.AddToCart(produtToAdd2.Id);
+            var redirectResult7 = cartController.AddToCart(produtToAdd3.Id) as RedirectToActionResult;
+            cartController.AddToCart(produtToAdd3.Id);
 
             // Assert
-            Assert.Equal(2, cart.Lines.Count());
+            Assert.Equal(3, cart.Lines.Count());
             Assert.Equal(produtToAdd1.Id, cart.Lines.First().Product.Id);
-            //Assert.Equal(produtToAdd2.Id, cart.Lines.ElementAt(1).Product.Id);
+            Assert.Equal(produtToAdd2.Id, cart.Lines.ElementAt(1).Product.Id);
+            Assert.Equal(produtToAdd3.Id, cart.Lines.ElementAt(2).Product.Id);
         }
 
         // 6 . THE USER REMOVES ONE PRODUCT FROM HIS CART
