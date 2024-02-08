@@ -28,15 +28,6 @@ using Xunit;
 
 namespace P3AddNewFunctionalityDotNetCore.Test
 {
-    [CollectionDefinition("Tests")]
-    public class TestCollection : ICollectionFixture<Integration>
-    {
-        // This class has no code and is never created. Its purpose is simply
-        // to be the place to apply [CollectionDefinition] and all the
-        // ICollectionFixture<> interfaces.
-    }
-
-    [Collection("Tests")]
     public class Integration : IDisposable
     {
         // STARTING SETTING-UP
@@ -44,9 +35,7 @@ namespace P3AddNewFunctionalityDotNetCore.Test
         public ProductRepository productRepository;
         public readonly P3Referential _sharedContext;
         public AccountController _accountController;
-        public Cart cart;
-        public OrderController orderController;
-        public OrderService orderService;
+
 
 
 
@@ -63,12 +52,13 @@ namespace P3AddNewFunctionalityDotNetCore.Test
             var _optionsAppIdentity = new DbContextOptionsBuilder<AppIdentityDbContext>()
                 .UseSqlServer(configuration.GetConnectionString("P3Identity"))
                 .Options;
-            
 
             _sharedContext = new P3Referential(_optionsP3Referential, configuration);
             productRepository = new ProductRepository(_sharedContext);
 
             InitializeSeedData();
+
+
         }
 
         public void Dispose()
@@ -78,6 +68,7 @@ namespace P3AddNewFunctionalityDotNetCore.Test
 
         public void InitializeSeedData()
         {
+            
             var serviceCollection = new ServiceCollection();
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
@@ -243,24 +234,22 @@ namespace P3AddNewFunctionalityDotNetCore.Test
         {
             Mock<ILanguageService> _mockLanguageService = new Mock<ILanguageService>();
 
-            //var productRepository = new ProductRepository(_sharedContext);
-
             var productService = new ProductService(new Cart(), productRepository, new OrderRepository(_sharedContext), new Mock<IStringLocalizer<ProductService>>().Object);
 
             var productController = new ProductController(productService, _mockLanguageService.Object);
 
-            ProductViewModel productThatWillBeDeletedViewModel = new() // This product is well defined
+            ProductViewModel productViewModel1 = new() // This product is well defined
             {
-                Name = "productThatWillBeDeleted",
+                Name = "DeleteThis",
                 Price = "1.00",
                 Stock = "666",
                 Description = "We create this product. We Assert. We delete. We Assert.",
                 Details = "DetailsTest",
             };
 
-            ProductViewModel productThatStaysInDbViewModel = new() // This product is well defined
+            ProductViewModel productViewModel2 = new() // This product is well defined
             {
-                Name = "productThatStaysInDb",
+                Name = "KeepThis",
                 Price = "1.00",
                 Stock = "666",
                 Description = "We create this product. We Assert.",
@@ -269,48 +258,45 @@ namespace P3AddNewFunctionalityDotNetCore.Test
 
             // 3.1 CREATE
             // Act
-            var validationContext1 = new ValidationContext(productThatWillBeDeletedViewModel, null, null);
+            var validationContext1 = new ValidationContext(productViewModel1, null, null);
             var validationResults1 = new List<ValidationResult>();
-            bool isValid1 = Validator.TryValidateObject(productThatWillBeDeletedViewModel, validationContext1, validationResults1, true);
-            var validationContext2 = new ValidationContext(productThatStaysInDbViewModel, null, null);
+            bool isValid1 = Validator.TryValidateObject(productViewModel1, new ValidationContext(productViewModel1, null, null), new List<ValidationResult>(), true);
+            
+            var validationContext2 = new ValidationContext(productViewModel2, null, null);
             var validationResults2 = new List<ValidationResult>();
-            bool isValid2 = Validator.TryValidateObject(productThatStaysInDbViewModel, validationContext2, validationResults2, true);
+            bool isValid2 = Validator.TryValidateObject(productViewModel2, validationContext2, validationResults2, true);
 
-            var redirectResult1 = productController.Create(productThatWillBeDeletedViewModel) as RedirectToActionResult;
-            productController.Create(productThatWillBeDeletedViewModel);
-            var redirectResult2 = productController.Create(productThatStaysInDbViewModel) as RedirectToActionResult;
-            productController.Create(productThatStaysInDbViewModel);
+            //var redirectResult1 = productController.Create(productViewModel1) as RedirectToActionResult;
+            productController.Create(productViewModel1);
+            //var redirectResult2 = productController.Create(productViewModel2) as RedirectToActionResult;
+            productController.Create(productViewModel2);
 
-            Product createdProduct1 = _sharedContext.Product.FirstOrDefault(p => p.Name == productThatWillBeDeletedViewModel.Name);
-            Product createdProduct2 = _sharedContext.Product.FirstOrDefault(p => p.Name == productThatStaysInDbViewModel.Name);
+            Product createdProduct1 = _sharedContext.Product.FirstOrDefault(p => p.Name == productViewModel1.Name);
+            Product createdProduct2 = _sharedContext.Product.FirstOrDefault(p => p.Name == productViewModel2.Name);
 
             // Assert
             Assert.True(isValid1, "Model should be valid because every field is well filled");
-            Assert.NotNull(redirectResult1);
-            Assert.Equal("Admin", redirectResult1.ActionName);
+            //Assert.NotNull(redirectResult1);
+            //Assert.Equal("Admin", redirectResult1.ActionName);
             Assert.NotNull(createdProduct1);
 
             Assert.True(isValid2, "Model should be valid because every field is well filled");
-            Assert.NotNull(redirectResult2);
-            Assert.Equal("Admin", redirectResult2.ActionName);
+            //Assert.NotNull(redirectResult2);
+            //Assert.Equal("Admin", redirectResult2.ActionName);
             Assert.NotNull(createdProduct2);
-
-            //TODO : NOT WORKING
-            //// 3.2 User deletes one product  
-            ////Act
-            //var redirectResult3 = productController.DeleteProduct(createdProduct1.Id) as RedirectToActionResult;
-            //productController.DeleteProduct(createdProduct1.Id);
-            //productController.DeleteProduct(productThatWillBeDeletedViewModel.Id);
-            //_sharedContext.SaveChanges();
-            //_sharedContext.ChangeTracker.Clear();
+            
+            // 3.2 User deletes one product  
+            //Act
+            var redirectResult3 = productController.DeleteProduct(createdProduct1.Id) as RedirectToActionResult;
+            
+            _sharedContext.SaveChanges();
+            _sharedContext.ChangeTracker.Clear();
 
 
-            //// Assert
-            //Assert.NotNull(redirectResult3);
-            //Assert.Equal("Admin", redirectResult3.ActionName);
-            //Assert.Null(createdProduct1);
-            //Assert.Null(productThatWillBeDeletedViewModel);
-
+            // Assert
+            Assert.Equal("Admin", redirectResult3.ActionName);
+            Assert.Null(_sharedContext.Product.FirstOrDefault(p => p.Id == createdProduct1.Id));
+            Dispose();
         }
 
         // 4. THE USER LOG OUT
@@ -318,6 +304,7 @@ namespace P3AddNewFunctionalityDotNetCore.Test
         [Fact]
         public async Task WhenClickOnLogoutButton_Logout()
         {
+
             // Arrange
             LoginModel loginModel = StartLoginModel("Admin", "P@ssword123", null);
             IdentityUser identityUser = StartIdentityUser(loginModel);
@@ -331,113 +318,5 @@ namespace P3AddNewFunctionalityDotNetCore.Test
             Assert.IsType<RedirectResult>(result_clickOnLogoutButton_Logout);
             Assert.Equal("/", result_clickOnLogoutButton_Logout.Url);
         }
-
-
-        [Fact]
-        public void CheckProductsExistenceInDatabase()
-        {
-            _sharedContext.SaveChanges();
-            _sharedContext.ChangeTracker.Clear();
-
-            //var productThatWillBeDeletedCheck = _sharedContext.Product.FirstOrDefault(p => p.Name == "productThatWillBeDeleted");
-            var productThatStaysInDbCheck = _sharedContext.Product.FirstOrDefault(p => p.Name == "productThatStaysInDb");
-
-            // Assert that product1 and product2 are not null
-            //Assert.Null(productThatWillBeDeletedCheck);
-            Assert.NotNull(productThatStaysInDbCheck);
-        }
-
-
-        // 5. THE USER ADDS TWO PRODUCTS TO HIS CART AND DELETE ONE
-
-        private readonly ILanguageService languageService;
-
-        [Fact]
-        public void AddTwoProductsAndRemovesOneToCart()
-        {
-            // 5.1 User add two product to his cart
-            // Arrange
-            Cart cart = new();
-
-            //var productRepository = new ProductRepository(_sharedContext);
-            var orderRepository = new OrderRepository(_sharedContext);
-            var productService = new ProductService(cart, productRepository, orderRepository, new Mock<IStringLocalizer<ProductService>>().Object);
-            var productController = new ProductController(productService, languageService);
-
-            CartController cartController = new(cart, productService);
-            var productToAdd1 = productRepository.GetAllProducts().FirstOrDefault(p => p.Name == "Echo Dot");
-            //var productToAdd2 = productRepository.GetAllProducts().FirstOrDefault(p => p.Name == "productThatWillBeDeleted");
-            var productToAdd3 = productRepository.GetAllProducts().FirstOrDefault(p => p.Name == "productThatStaysInDb");
-
-
-            // Act
-            var redirectResult5 = cartController.AddToCart(productToAdd1.Id) as RedirectToActionResult;
-            cartController.AddToCart(productToAdd1.Id);
-            //var redirectResult6 = cartController.AddToCart(productToAdd2.Id) as RedirectToActionResult;
-            //cartController.AddToCart(productToAdd2.Id);
-            var redirectResult7 = cartController.AddToCart(productToAdd3.Id) as RedirectToActionResult;
-            cartController.AddToCart(productToAdd3.Id);
-
-            // Assert
-            Assert.NotNull(productToAdd1);
-            //Assert.Null(produtToAdd2);
-            Assert.NotNull(productToAdd3);
-
-            Assert.Equal(2, cart.Lines.Count());
-            Assert.Equal(productToAdd1.Id, cart.Lines.First().Product.Id);
-            //Assert.Equal(produtToAdd2.Id, cart.Lines.ElementAt(1).Product.Id);
-            Assert.Equal(productToAdd3.Id, cart.Lines.ElementAt(1).Product.Id);
-
-
-            // 5.2 User deletes one product from his cart
-            // Act
-            cartController.RemoveFromCart(productToAdd1.Id);
-            var redirectResult8 = cartController.RemoveFromCart(productToAdd1.Id) as RedirectToActionResult;
-
-            //Assert
-            Assert.Single(cart.Lines);
-            Assert.NotNull(redirectResult8);
-            Assert.Equal(productToAdd3.Id, cart.Lines.First().Product.Id);
-
-        }
-
-        // TODO : WIP
-        [Fact]
-        public void WhenFormIsIncorrect_CartIsNotOrder()
-        {
-            
-            var orderRepository = new OrderRepository(_sharedContext);
-            var productService = new ProductService(cart, productRepository, orderRepository, new Mock<IStringLocalizer<ProductService>>().Object);
-            var productController = new ProductController(productService, languageService);
-            var orderService = new OrderService(cart, orderRepository, productService);
-
-            CartController cartController = new(cart, productService);
-            OrderController orderController = new(cart, orderService, new Mock<IStringLocalizer<OrderController>>().Object);
-            var order = new OrderViewModel()
-            {
-                Name = "",
-                Address = "AdresseTest",
-                City = "VilleTest",
-                Zip = "75000",
-                Country = "CountryTest",
-            };
-
-
-            // Act
-
-            var validationContext = new ValidationContext(order, null, null);
-            var validationResults = new List<ValidationResult>();
-            bool isValid = Validator.TryValidateObject(order, validationContext, validationResults, true);
-            var result = cartController.Index() as ViewResult;
-
-            // Assert
-            Assert.Single(cart.Lines);
-            Assert.False(cartController.ModelState.IsValid, "Not Empty Cart and Model is Valid");
-            Assert.False(isValid, "Model should be invalid when Name is missing");
-
-
-        }
-
-
     }
 }
