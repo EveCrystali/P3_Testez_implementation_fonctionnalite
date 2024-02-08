@@ -3,7 +3,7 @@ using P3AddNewFunctionalityDotNetCore.Models;
 using P3AddNewFunctionalityDotNetCore.Models.Entities;
 using Xunit;
 
-namespace P3AddNewFunctionalityDotNetCore.Tests
+namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
 {
     /// <summary>
     /// The Cart test class

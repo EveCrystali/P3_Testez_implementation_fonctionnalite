@@ -14,7 +14,7 @@ using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
 using P3AddNewFunctionalityDotNetCore.Models.Entities;
 using Castle.Components.DictionaryAdapter.Xml;
 
-namespace P3AddNewFunctionalityDotNetCore.Tests
+namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
 {
     public class OrderControllerTests
     {

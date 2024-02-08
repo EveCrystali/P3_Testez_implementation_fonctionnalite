@@ -25,7 +25,7 @@ using System.Drawing;
 using System.Security.Cryptography.Xml;
 using P3AddNewFunctionalityDotNetCore.Data;
 
-namespace P3AddNewFunctionalityDotNetCore.Tests
+namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
 {
     public class AccountControllerTests
     {
@@ -53,10 +53,10 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
 
         public static bool LoginValidator(LoginModel loginModel)
         {
-                return IdentitySeedData.AdminPassword == loginModel.Password && IdentitySeedData.AdminUser == loginModel.Name;
+            return IdentitySeedData.AdminPassword == loginModel.Password && IdentitySeedData.AdminUser == loginModel.Name;
         }
 
-            private void SetupMocking(LoginModel loginModel, IdentityUser identityUser)
+        private void SetupMocking(LoginModel loginModel, IdentityUser identityUser)
         {
             var mockUserStore = new Mock<IUserStore<IdentityUser>>();
             var mockUserManager = new Mock<UserManager<IdentityUser>>(
@@ -176,7 +176,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             // Username: "WrongId", Password: "P@ssword123"
             LoginModel loginModel2 = StartLoginModel("WrongId", "P@ssword123", null);
             IdentityUser identityUser2 = StartIdentityUser(loginModel2);
-            SetupMocking   (loginModel2, identityUser2);
+            SetupMocking(loginModel2, identityUser2);
 
             // Username: "Admin", Password: "WrongPassword"
             LoginModel loginModel3 = StartLoginModel("Admin", "WrongPassword", null);

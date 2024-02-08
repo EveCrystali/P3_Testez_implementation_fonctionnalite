@@ -7,7 +7,7 @@ using P3AddNewFunctionalityDotNetCore.Models.Entities;
 
 namespace P3AddNewFunctionalityDotNetCore.Data
 {
-    public class SeedData
+    public static class SeedData
     {
         public static void Initialize(IServiceProvider serviceProvider, IConfiguration config)
         {

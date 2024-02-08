@@ -42,8 +42,6 @@ namespace P3AddNewFunctionalityDotNetCore.Controllers
         {
             if (ModelState.IsValid)
             {
-                //TODO Implement the case if the product already exist : we must adjust quantities
-
                 _productService.SaveProduct(product);
                 return RedirectToAction("Admin");
             }

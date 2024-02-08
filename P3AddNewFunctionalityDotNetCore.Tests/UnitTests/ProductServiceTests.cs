@@ -16,16 +16,16 @@ using System.Globalization;
 using static P3AddNewFunctionalityDotNetCore.Models.Services.ProductService;
 
 
-namespace P3AddNewFunctionalityDotNetCore.Tests
+namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
 {
     public class ProductServiceTests
     {
 
         private Mock<IProductService> _mockproductService;
-        private Mock <ILanguageService> _mockLanguageService;
+        private Mock<ILanguageService> _mockLanguageService;
         private Mock<IStringLocalizer<OrderController>> _mockLocalizer;
         private ProductController _productController;
- 
+
 
 
         public ProductServiceTests()
@@ -101,7 +101,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             bool isValid1 = Validator.TryValidateObject(product1, validationContext1, validationResults1, true);
             // Create the product1 
             var result1 = _productController.Create(product1) as RedirectToActionResult;
-            
+
             var validationContext2 = new ValidationContext(product2, null, null);
             var validationResults2 = new List<ValidationResult>();
             bool isValid2 = Validator.TryValidateObject(product2, validationContext2, validationResults2, true);
@@ -131,17 +131,17 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
 
             // Let's verify that the model is considered as: valid
             Assert.True(isValid1, "Model should be valid because every field is well filled");
-                // Let's verify that the product1 has been added to the list 
-                _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
-                Assert.NotNull(result1);
-                Assert.Equal("Admin", result1.ActionName);
-            
+            // Let's verify that the product1 has been added to the list 
+            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
+            Assert.NotNull(result1);
+            Assert.Equal("Admin", result1.ActionName);
+
             // Let's verify that the model is considered as: valid
             Assert.True(isValid2, "Model should be valid because every field is well filled");
-                // Let's verify that the product2 has been added to the list 
-                _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
-                Assert.NotNull(result2);
-                Assert.Equal("Admin", result2.ActionName);
+            // Let's verify that the product2 has been added to the list 
+            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
+            Assert.NotNull(result2);
+            Assert.Equal("Admin", result2.ActionName);
 
             Assert.True(isValid3, "Model should be valid because every field is well filled");
             // Let's verify that the product3 has been added to the list 

@@ -27,8 +27,7 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Services
             _localizer = localizer;
         }
         public List<ProductViewModel> GetAllProductsViewModel()
-        {
-             
+        { 
             IEnumerable<Product> productEntities = GetAllProducts();
             return MapToViewModel(productEntities);
         }
