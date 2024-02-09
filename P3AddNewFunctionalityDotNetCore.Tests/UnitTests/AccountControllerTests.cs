@@ -17,6 +17,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
     public class AccountControllerTests
     {
         private AccountController _accountController;
+        private Mock<SignInManager<IdentityUser>> mockSignInManager;
 
         private static LoginModel StartLoginModel(string username, string password, string returnUrl)
         {
@@ -56,14 +57,14 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             var mockAuthSchemeProvider = new Mock<IAuthenticationSchemeProvider>();
             var mockUserConfirmation = new Mock<IUserConfirmation<IdentityUser>>();
 
-            var mockSignInManager = new Mock<SignInManager<IdentityUser>>(
-                mockUserManager.Object,
-                mockContextAccessor.Object,
-                mockUserPrincipalFactory.Object,
-                mockOptions.Object,
-                mockLogger.Object,
-                mockAuthSchemeProvider.Object,
-                mockUserConfirmation.Object);
+            mockSignInManager = new Mock<SignInManager<IdentityUser>>(
+            mockUserManager.Object,
+            mockContextAccessor.Object,
+            mockUserPrincipalFactory.Object,
+            mockOptions.Object,
+            mockLogger.Object,
+            mockAuthSchemeProvider.Object,
+            mockUserConfirmation.Object);
 
             var mockLocalizer = new Mock<IStringLocalizer<AccountController>>();
 
@@ -244,6 +245,24 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             Assert.True(viewResult6.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
         }
 
-        // TODO : Add test for Logout
+        [Fact]
+        public async void Logout_WhenUserClickOnLogout_LogoutAndRedirect()
+        {
+            LoginModel loginModel = StartLoginModel("Admin", "P@ssword123", null);
+            IdentityUser identityUser = StartIdentityUser(loginModel);
+            SetupMocking(loginModel, identityUser);
+            mockSignInManager.Setup(m => m.SignOutAsync()).Returns(Task.CompletedTask);
+            bool isValid = LoginValidator(loginModel);
+
+            // Act
+            var loginResult = await _accountController.Login(loginModel);
+            mockSignInManager.Invocations.Clear(); // Clear previous invocations
+            var redirectResult = await _accountController.Logout() as RedirectResult;
+
+            // Assert
+            mockSignInManager.Verify(m => m.SignOutAsync(), Times.Once);
+            Assert.IsType<RedirectResult>(redirectResult);
+            Assert.Equal("/", redirectResult.Url);
+        }
     }
 }
