@@ -2,24 +2,16 @@
 using P3AddNewFunctionalityDotNetCore.Controllers;
 using P3AddNewFunctionalityDotNetCore.Models.Entities;
 using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
-using P3AddNewFunctionalityDotNetCore.Models;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Xunit;
-using System;
 using Microsoft.Extensions.Localization;
 using Moq;
 using P3AddNewFunctionalityDotNetCore.Models.Services;
-using System.Drawing;
 using P3AddNewFunctionalityDotNetCore.Models.Repositories;
-using System.Globalization;
 using static P3AddNewFunctionalityDotNetCore.Models.Services.ProductService;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel;
-using System.Security.Policy;
-using P3AddNewFunctionalityDotNetCore.Data;
 using System.Linq;
-using Microsoft.AspNetCore.Http;
+using Shouldly;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
 {
@@ -30,7 +22,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         private Mock<ILanguageService> mockLanguageService;
         private Mock<IStringLocalizer<OrderController>> mockLocalizer;
         private ProductController productController;
-        private int saveProductCallCount;
+        private List<Product> mockProductList = new();
 
         public ProductServiceTests()
         {
@@ -38,20 +30,28 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
 
             // Setup the behavior for SaveProduct method in ProductRepository
             mockProductRepository.Setup(repo => repo.SaveProduct(It.IsAny<Product>()))
-                                 .Callback<Product>(product =>
-                                 {
-                                     saveProductCallCount++;
-                                 });
+                                 .Callback<Product>(product => mockProductList.Add(product));
 
             mockProductService = new Mock<IProductService>();
 
             // Setup the behavior for SaveProduct method in ProductService
             // When the SaveProduct method is called with any ProductViewModel, it will execute a callback that calls the SaveProduct method on a mocked ProductRepository, passing in a new Product.
             mockProductService.Setup(service => service.SaveProduct(It.IsAny<ProductViewModel>()))
-                               .Callback<ProductViewModel>(viewModel =>
+                               .Callback<ProductViewModel>(_ => mockProductRepository.Object.SaveProduct(new Product()));
+
+            mockProductService.Setup(service => service.DeleteProduct(It.IsAny<int>()))
+                               .Callback<int>(productId =>
                                {
-                                   mockProductRepository.Object.SaveProduct(new Product());
+                                   mockProductRepository.Object.DeleteProduct(productId);
+                                   var productToRemove = mockProductList.Find(p => p.Id == productId);
+                                   if (productToRemove != null)
+                                   {
+                                       mockProductList.Remove(productToRemove);
+                                   }
                                });
+            mockProductRepository.Setup(repo => repo.GetAllProducts())
+                         .Returns(mockProductList);
+
             mockLanguageService = new Mock<ILanguageService>();
             mockLocalizer = new Mock<IStringLocalizer<OrderController>>();
             productController = new ProductController(mockProductService.Object, mockLanguageService.Object);
@@ -200,6 +200,8 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
 
             mockProductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
             mockProductRepository.Verify(repo => repo.SaveProduct(It.IsAny<Product>()), Times.Exactly(5));
+            mockProductRepository.Object.GetAllProducts().Count().ShouldBe(5);
+
         }
 
         private static void ValidateModel(Controller controller, object model)
@@ -435,12 +437,14 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
 
             // Act
             productController.Create(productViewModel1);
-            mockProductService.Verify(s => s.SaveProduct(productViewModel1));
             productController.DeleteProduct(productViewModel1.Id);
-            mockProductService.Verify(s => s.DeleteProduct(productViewModel1.Id));
 
-
-
+            // Assert
+            mockProductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(1));
+            mockProductRepository.Verify(service => service.SaveProduct(It.IsAny<Product>()), Times.Exactly(1));
+            mockProductService.Verify(service => service.DeleteProduct(It.IsAny<int>()), Times.Exactly(1));
+            mockProductRepository.Verify(repo => repo.DeleteProduct(It.IsAny<int>()), Times.Exactly(1));
+            mockProductRepository.Object.GetAllProducts().Count().ShouldBe(0);
         }
     }
 }
