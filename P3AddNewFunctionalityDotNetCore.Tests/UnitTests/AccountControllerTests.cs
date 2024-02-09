@@ -1,31 +1,18 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using P3AddNewFunctionalityDotNetCore.Models;
-using P3AddNewFunctionalityDotNetCore.Controllers;
-using P3AddNewFunctionalityDotNetCore.Models.Services;
-using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
-using System.Collections.Generic;
-using Microsoft.AspNetCore.Http;
-using System.ComponentModel.DataAnnotations;
-using System;
-using Xunit;
-using Microsoft.Extensions.Localization;
-using Moq;
-using System.Linq;
-using P3AddNewFunctionalityDotNetCore.Models.Entities;
-using Castle.Components.DictionaryAdapter.Xml;
-using Microsoft.AspNetCore.Identity;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using System.Security.Claims;
-using System.Drawing;
-using System.Security.Cryptography.Xml;
+using Moq;
+using P3AddNewFunctionalityDotNetCore.Controllers;
 using P3AddNewFunctionalityDotNetCore.Data;
+using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
+using Xunit;
 
-namespace P3AddNewFunctionalityDotNetCore.Tests
+namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
 {
     public class AccountControllerTests
     {
@@ -53,10 +40,10 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
 
         public static bool LoginValidator(LoginModel loginModel)
         {
-                return IdentitySeedData.AdminPassword == loginModel.Password && IdentitySeedData.AdminUser == loginModel.Name;
+            return IdentitySeedData.AdminPassword == loginModel.Password && IdentitySeedData.AdminUser == loginModel.Name;
         }
 
-            private void SetupMocking(LoginModel loginModel, IdentityUser identityUser)
+        private void SetupMocking(LoginModel loginModel, IdentityUser identityUser)
         {
             var mockUserStore = new Mock<IUserStore<IdentityUser>>();
             var mockUserManager = new Mock<UserManager<IdentityUser>>(
@@ -153,7 +140,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 else if (result is RedirectResult redirectResult)
                 {
                     Assert.NotNull(result);
-                    const string expectedUrl = "/Admin/Index";
+                    const string expectedUrl = "/Product/Admin";
                     Assert.Equal(expectedUrl, redirectResult.Url);
                 }
             }
@@ -176,7 +163,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             // Username: "WrongId", Password: "P@ssword123"
             LoginModel loginModel2 = StartLoginModel("WrongId", "P@ssword123", null);
             IdentityUser identityUser2 = StartIdentityUser(loginModel2);
-            SetupMocking   (loginModel2, identityUser2);
+            SetupMocking(loginModel2, identityUser2);
 
             // Username: "Admin", Password: "WrongPassword"
             LoginModel loginModel3 = StartLoginModel("Admin", "WrongPassword", null);
@@ -256,5 +243,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             Assert.IsType<ViewResult>(result6);
             Assert.True(viewResult6.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
         }
+
+        // TODO : Add test for Logout
     }
 }

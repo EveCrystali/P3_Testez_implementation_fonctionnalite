@@ -4,12 +4,12 @@ namespace P3AddNewFunctionalityDotNetCore.Models.ViewModels
 {
     public class LoginModel
     {
-        [Required]
+        [Required(ErrorMessage = "ErrorMissingName")]
         public string Name { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "ErrorMissingPassword")]
         public string Password { get; set; }
 
-        public string ReturnUrl { get; set; } = "/";
+        public string? ReturnUrl { get; set; } = null ;
     }
 }

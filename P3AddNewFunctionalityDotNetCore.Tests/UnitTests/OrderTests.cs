@@ -14,7 +14,7 @@ using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
 using P3AddNewFunctionalityDotNetCore.Models.Entities;
 using Castle.Components.DictionaryAdapter.Xml;
 
-namespace P3AddNewFunctionalityDotNetCore.Tests
+namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
 {
     public class OrderControllerTests
     {
@@ -32,11 +32,10 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         }
 
         [Fact]
-        //Cart is empty but Form is valid
         public void Index_WhenCartIsEmpty_AddsModelError()
         {
             // Arrange
-            Cart cart = new Cart();
+            Cart cart = new();
             _mockLocalizer.Setup(l => l["CartEmpty"]).Returns(new LocalizedString("CartEmpty", "The cart is empty."));
             _controller = new OrderController(cart, _mockOrderService.Object, _mockLocalizer.Object);
 
@@ -45,7 +44,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 Name = "NomDeTest",
                 Address = "AdresseTest",
                 City = "VilleTest",
-                Zip = "ZipTest",
+                Zip = "75000",
                 Country = "PaysTest",
             };
 
@@ -59,14 +58,20 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             Assert.Equal(order, result?.Model);
         }
 
-        
         [Fact]
-        //Cart is not empty and form is valid 
         public void Index_CartNotEmptyModelStateValid_ModelStateValid()
         {
             // Arrange
-            Cart cart = new Cart();
-            Product product = new Product();
+            Cart cart = new();
+            Product product = new()
+            {
+                Name = "ProductNameTest",
+                Price = 1.00,
+                Quantity = 1,
+                Description = "DescriptionTest",
+                Details = "DetailsTest",
+                Id = 1,
+            };
             cart.AddItem(product, 1);
             _controller = new OrderController(cart, _mockOrderService.Object, _mockLocalizer.Object);
             var order = new OrderViewModel()
@@ -74,7 +79,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 Name = "NomDeTest",
                 Address = "AdresseTest",
                 City = "VilleTest",
-                Zip = "ZipTest",
+                Zip = "75000",
                 Country = "PaysTest",
             };
 
@@ -86,12 +91,11 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         }
 
         [Fact]
-        //Cart is not empty and form is not valid : name is missing ErrorMissingName
         public void Index_MissingName_ModelStateIsNotValid()
         {
             // Arrange
-            Cart cart = new Cart();
-            Product product = new Product
+            Cart cart = new();
+            Product product = new()
             {
                 Name = "ProductNameTest",
                 Price = 1.00,
@@ -108,7 +112,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 Name = "",
                 Address = "AdresseTest",
                 City = "VilleTest",
-                Zip = "ZipTest",
+                Zip = "75000",
                 Country = "CountryTest",
             };
 
@@ -124,12 +128,11 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         }
 
         [Fact]
-        //Cart is not empty and form is not valid : Adress is missing ErrorMissingAddress
         public void Index_MissingAddress_ModelStateIsNotValid()
         {
             // Arrange
-            Cart cart = new Cart();
-            Product product = new Product
+            Cart cart = new();
+            Product product = new()
             {
                 Name = "ProductNameTest",
                 Price = 1.00,
@@ -146,7 +149,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 Name = "NameTest",
                 Address = "",
                 City = "VilleTest",
-                Zip = "ZipTest",
+                Zip = "75000",
                 Country = "CountryTest",
             };
 
@@ -162,12 +165,11 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         }
 
         [Fact]
-        //Cart is not empty and form is not valid : City is missing ErrorMissingCity
         public void Index_MissingCity_ModelStateIsNotValid()
         {
             // Arrange
-            Cart cart = new Cart();
-            Product product = new Product
+            Cart cart = new();
+            Product product = new()
             {
                 Name = "ProductNameTest",
                 Price = 1.00,
@@ -184,7 +186,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
                 Name = "NameTest",
                 Address = "AdresseTest",
                 City = "",
-                Zip = "ZipTest",
+                Zip = "75000",
                 Country = "CountryTest",
             };
 
@@ -200,12 +202,11 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         }
 
         [Fact]
-        //Cart is not empty and form is not valid : ZipCode is missing ErrorMissingZipCode
         public void Index_MissingZip_ModelStateIsNotValid()
         {
             // Arrange
-            Cart cart = new Cart();
-            Product product = new Product
+            Cart cart = new();
+            Product product = new()
             {
                 Name = "ProductNameTest",
                 Price = 1.00,
@@ -238,12 +239,48 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         }
 
         [Fact]
-        //Cart is not empty and form is not valid : Country is missing ErrorMissingCountry
+        public void Index_UnvalidZip_ModelStateIsNotValid()
+        {
+            // Arrange
+            Cart cart = new();
+            Product product = new()
+            {
+                Name = "ProductNameTest",
+                Price = 1.00,
+                Quantity = 1,
+                Description = "DescriptionTest",
+                Details = "DetailsTest",
+                Id = 1,
+            };
+
+            cart.AddItem(product, 1);
+            _controller = new OrderController(cart, _mockOrderService.Object, _mockLocalizer.Object);
+            var order = new OrderViewModel()
+            {
+                Name = "NameTest",
+                Address = "AdresseTest",
+                City = "CityTest",
+                Zip = "666",
+                Country = "CountryTest",
+            };
+
+            var validationContext = new ValidationContext(order, null, null);
+            var validationResults = new List<ValidationResult>();
+            bool isValid = Validator.TryValidateObject(order, validationContext, validationResults, true);
+
+            // Act
+            var result = _controller.Index(order) as ViewResult;
+
+            // Assert
+            Assert.False(isValid, "Model should be invalid when Zip is false");
+        }
+
+        [Fact]
         public void Index_MissingCountry_ModelStateIsNotValid()
         {
             // Arrange
-            Cart cart = new Cart();
-            Product product = new Product
+            Cart cart = new();
+            Product product = new()
             {
                 Name = "ProductNameTest",
                 Price = 1.00,
@@ -274,7 +311,5 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
             // Assert
             Assert.False(isValid, "Model should be invalid when Country is missing");
         }
-
     }
-
 }

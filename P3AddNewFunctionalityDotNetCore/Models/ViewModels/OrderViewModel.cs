@@ -22,7 +22,9 @@ namespace P3AddNewFunctionalityDotNetCore.Models.ViewModels
         [Required(ErrorMessage = "ErrorMissingCity")]
         public string City { get; set; }
 
+        // TODO Check type of zip
         [Required(ErrorMessage = "ErrorMissingZipCode")]
+        [RegularExpression(@"^\d{5}(?:([-\s]|)\d{4})?$", ErrorMessage = "ErrorUnvalidZipCode")]
         public string Zip { get; set; }
 
         [Required(ErrorMessage = "ErrorMissingCountry")]

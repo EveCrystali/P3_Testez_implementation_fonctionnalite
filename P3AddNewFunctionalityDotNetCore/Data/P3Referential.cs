@@ -20,7 +20,6 @@ namespace P3AddNewFunctionalityDotNetCore.Data
         public virtual DbSet<OrderLine> OrderLine { get; set; }
         public virtual DbSet<Product> Product { get; set; }
 
-
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
@@ -36,7 +35,7 @@ namespace P3AddNewFunctionalityDotNetCore.Data
             modelBuilder.Entity<OrderLine>(entity =>
             {
                 entity.HasIndex(e => e.OrderId)
-                    .HasName("IX_OrderLineEntity_OrderEntityId");
+                    .HasDatabaseName("IX_OrderLineEntity_OrderEntityId");
 
                 entity.HasOne(d => d.Order)
                     .WithMany(p => p.OrderLine)
@@ -52,5 +51,3 @@ namespace P3AddNewFunctionalityDotNetCore.Data
         }
     }
 }
-
-

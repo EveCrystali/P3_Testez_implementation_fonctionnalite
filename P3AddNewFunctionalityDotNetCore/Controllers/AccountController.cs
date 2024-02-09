@@ -44,7 +44,7 @@ namespace P3AddNewFunctionalityDotNetCore.Controllers
                     if ((await _signInManager.PasswordSignInAsync(user,
                     loginModel.Password, false, false)).Succeeded)
                     {
-                        return Redirect(loginModel.ReturnUrl ?? "/Admin/Index");                       
+                        return Redirect(loginModel.ReturnUrl ?? "/Product/Admin");                       
                     }
                 }
             }
@@ -52,10 +52,10 @@ namespace P3AddNewFunctionalityDotNetCore.Controllers
             return View(loginModel);
         }
 
-        public async Task<RedirectResult> Logout(string returnUrl = "/")
+        public async Task<RedirectResult> Logout()
         {
             await _signInManager.SignOutAsync();
-            return Redirect(returnUrl);
+            return Redirect("/");
         }
     }
 }
