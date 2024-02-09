@@ -17,29 +17,51 @@ using static P3AddNewFunctionalityDotNetCore.Models.Services.ProductService;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using System.Security.Policy;
+using P3AddNewFunctionalityDotNetCore.Data;
+using System.Linq;
+using Microsoft.AspNetCore.Http;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
 {
     public class ProductServiceTests
     {
-        private Mock<IProductService> _mockproductService;
-        private Mock<ILanguageService> _mockLanguageService;
-        private Mock<IStringLocalizer<OrderController>> _mockLocalizer;
-        private ProductController _productController;
+        private Mock<IProductRepository> mockProductRepository;
+        private Mock<IProductService> mockProductService;
+        private Mock<ILanguageService> mockLanguageService;
+        private Mock<IStringLocalizer<OrderController>> mockLocalizer;
+        private ProductController productController;
+        private int saveProductCallCount;
 
         public ProductServiceTests()
         {
-            _mockproductService = new Mock<IProductService>();
-            _mockLanguageService = new Mock<ILanguageService>();
-            _mockLocalizer = new Mock<IStringLocalizer<OrderController>>();
-            _productController = new ProductController(_mockproductService.Object, _mockLanguageService.Object);
+            mockProductRepository = new Mock<IProductRepository>();
+
+            // Setup the behavior for SaveProduct method in ProductRepository
+            mockProductRepository.Setup(repo => repo.SaveProduct(It.IsAny<Product>()))
+                                 .Callback<Product>(product =>
+                                 {
+                                     saveProductCallCount++;
+                                 });
+
+            mockProductService = new Mock<IProductService>();
+
+            // Setup the behavior for SaveProduct method in ProductService
+            // When the SaveProduct method is called with any ProductViewModel, it will execute a callback that calls the SaveProduct method on a mocked ProductRepository, passing in a new Product.
+            mockProductService.Setup(service => service.SaveProduct(It.IsAny<ProductViewModel>()))
+                               .Callback<ProductViewModel>(viewModel =>
+                               {
+                                   mockProductRepository.Object.SaveProduct(new Product());
+                               });
+            mockLanguageService = new Mock<ILanguageService>();
+            mockLocalizer = new Mock<IStringLocalizer<OrderController>>();
+            productController = new ProductController(mockProductService.Object, mockLanguageService.Object);
         }
 
         [Fact]
         public void TestParseDoubleWithAutoDecimalSeparator_WhenInputHasAComma()
         {
             // Arrange
-            string input = "123,45";
+            const string input = "123,45";
             // Act
             double result = ParseDoubleWithAutoDecimalSeparator(input);
             // Assert
@@ -50,7 +72,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         public void TestParseDoubleWithAutoDecimalSeparator_WhenInputHasADot()
         {
             // Arrange
-            string input = "123.45";
+            const string input = "123.45";
             // Act
             double result = ParseDoubleWithAutoDecimalSeparator(input);
             // Assert
@@ -61,7 +83,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         public void TestParseDoubleWithAutoDecimalSeparator_WhenInputHasASeparator()
         {
             // Arrange
-            string input = "12345";
+            const string input = "12345";
             // Act
             double result = ParseDoubleWithAutoDecimalSeparator(input);
             // Assert
@@ -71,7 +93,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         [Fact]
         public void Create_AddOneProductWithDifferentTypesOfPrice_ProductAddedInList()
         {
-            ProductViewModel productViewModel1 = new ProductViewModel()
+            ProductViewModel productViewModel1 = new()
             {   // Price has decimal dot
                 Name = "NameTest",
                 Price = "1.00",
@@ -81,7 +103,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
                 Id = 1
             };
 
-            ProductViewModel productViewModel2 = new ProductViewModel()
+            ProductViewModel productViewModel2 = new()
             {   // Price has decimal comma
                 Name = "NameTest",
                 Price = "1,00",
@@ -91,7 +113,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
                 Id = 2
             };
 
-            ProductViewModel productViewModel3 = new ProductViewModel()
+            ProductViewModel productViewModel3 = new()
             {   //Price has decimal dot none
                 Name = "NameTest",
                 Price = "1.",
@@ -101,7 +123,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
                 Id = 3
             };
 
-            ProductViewModel productViewModel4 = new ProductViewModel()
+            ProductViewModel productViewModel4 = new()
             {   // Price has decimal comma none
                 Name = "NameTest",
                 Price = "1,",
@@ -111,7 +133,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
                 Id = 4
             };
 
-            ProductViewModel productViewModel5 = new ProductViewModel()
+            ProductViewModel productViewModel5 = new()
             {   //Price is an integer
                 Name = "NameTest",
                 Price = "1",
@@ -125,58 +147,62 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             var validationContext1 = new ValidationContext(productViewModel1, null, null);
             var validationResults1 = new List<ValidationResult>();
             bool isValid1 = Validator.TryValidateObject(productViewModel1, validationContext1, validationResults1, true);
-            var result1 = _productController.Create(productViewModel1) as RedirectToActionResult;
+            var result1 = productController.Create(productViewModel1) as RedirectToActionResult;
 
             var validationContext2 = new ValidationContext(productViewModel2, null, null);
             var validationResults2 = new List<ValidationResult>();
             bool isValid2 = Validator.TryValidateObject(productViewModel2, validationContext2, validationResults2, true);
-            var result2 = _productController.Create(productViewModel2) as RedirectToActionResult;
+            var result2 = productController.Create(productViewModel2) as RedirectToActionResult;
 
             var validationContext3 = new ValidationContext(productViewModel3, null, null);
             var validationResults3 = new List<ValidationResult>();
             bool isValid3 = Validator.TryValidateObject(productViewModel3, validationContext3, validationResults3, true);
-            var result3 = _productController.Create(productViewModel3) as RedirectToActionResult;
+            var result3 = productController.Create(productViewModel3) as RedirectToActionResult;
 
             var validationContext4 = new ValidationContext(productViewModel4, null, null);
             var validationResults4 = new List<ValidationResult>();
             bool isValid4 = Validator.TryValidateObject(productViewModel4, validationContext4, validationResults4, true);
-            var result4 = _productController.Create(productViewModel4) as RedirectToActionResult;
+            var result4 = productController.Create(productViewModel4) as RedirectToActionResult;
 
             var validationContext5 = new ValidationContext(productViewModel5, null, null);
             var validationResults5 = new List<ValidationResult>();
             bool isValid5 = Validator.TryValidateObject(productViewModel5, validationContext5, validationResults5, true);
-            var result5 = _productController.Create(productViewModel5) as RedirectToActionResult;
+            var result5 = productController.Create(productViewModel5) as RedirectToActionResult;
 
             // Assert
-            // For each product, we check if the model is considered as valid then if the product has been added to the list and if we are redirected to Admin
+            // Verify if the model is valid for each product and if the user is redirected to Admin.
+            // Also ensure that all 5 products are passed as arguments to the SaveProduct method in ProductService and ProductRepository.
 
             Assert.True(isValid1, "Model should be valid because every field is well filled");
-            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
+
             Assert.NotNull(result1);
             Assert.Equal("Admin", result1.ActionName);
 
             Assert.True(isValid2, "Model should be valid because every field is well filled");
-            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
+
             Assert.NotNull(result2);
             Assert.Equal("Admin", result2.ActionName);
 
             Assert.True(isValid3, "Model should be valid because every field is well filled");
-            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
+
             Assert.NotNull(result3);
             Assert.Equal("Admin", result3.ActionName);
 
             Assert.True(isValid4, "Model should be valid because every field is well filled");
-            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
+
             Assert.NotNull(result4);
             Assert.Equal("Admin", result4.ActionName);
 
             Assert.True(isValid5, "Model should be valid because every field is well filled");
-            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
+
             Assert.NotNull(result5);
             Assert.Equal("Admin", result5.ActionName);
+
+            mockProductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
+            mockProductRepository.Verify(repo => repo.SaveProduct(It.IsAny<Product>()), Times.Exactly(5));
         }
 
-        private void ValidateModel(Controller controller, object model)
+        private static void ValidateModel(Controller controller, object model)
         {
             //The manual synchronization of validation errors with the ModelState is done to mimic the behavior of an MVC controller during an HTTP request.
             //When a form is submitted, the MVC framework automatically validates the model and populates the ModelState with any validation errors.
@@ -202,7 +228,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         public void Create_Add1ProductNameMissing_ModelStateInvalidProductNotCreated()
         {
             //Arrange 1: initialize the product with an empty name
-            ProductViewModel productViewModelNoName = new ProductViewModel()
+            ProductViewModel productViewModelNoName = new()
             {
                 Name = "",
                 Price = "1.00",
@@ -213,16 +239,16 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             };
 
             // Act 1:  Validate product model
-            ValidateModel(_productController, productViewModelNoName);
+            ValidateModel(productController, productViewModelNoName);
 
             // Assert 1: Ensure ModelState is invalid
-            Assert.False(_productController.ModelState.IsValid, "Model should be invalid due to empty Name");
+            Assert.False(productController.ModelState.IsValid, "Model should be invalid due to empty Name");
 
             // Act 2: Attempt to create product with invalid model
-            var result = _productController.Create(productViewModelNoName);
+            var result = productController.Create(productViewModelNoName);
 
             // Assert 2: Verify product is not saved and correct ViewResult is returned
-            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Never);
+            mockProductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Never);
             Assert.IsType<ViewResult>(result);
         }
 
@@ -230,7 +256,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         public void Create_Add1ProductPriceMissing_ModelStateInvalidProductNotCreated()
         {
             //Arrange 1: initialize the product with an empty price
-            ProductViewModel productViewModelNoPrice = new ProductViewModel()
+            ProductViewModel productViewModelNoPrice = new()
             {
                 Name = "NameTest",
                 Price = "",
@@ -241,16 +267,16 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             };
 
             // Act 1: Validate product model
-            ValidateModel(_productController, productViewModelNoPrice);
+            ValidateModel(productController, productViewModelNoPrice);
 
             // Assert 1: Ensure ModelState is invalid
-            Assert.False(_productController.ModelState.IsValid, "Model should be invalid due to empty Name");
+            Assert.False(productController.ModelState.IsValid, "Model should be invalid due to empty Name");
 
             // Act 2: Attempt to create product with invalid model
-            var result = _productController.Create(productViewModelNoPrice);
+            var result = productController.Create(productViewModelNoPrice);
 
             // Assert 2: Verify product is not saved and correct ViewResult is returned
-            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Never);
+            mockProductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Never);
             Assert.IsType<ViewResult>(result);
         }
 
@@ -258,7 +284,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         public void Create_Add1ProductPriceNotDecimal_ModelStateInvalidProductNotCreated()
         {
             //Arrange 1: initialize the product with a non-decimal price
-            ProductViewModel productViewModelNotDecimalPrice = new ProductViewModel()
+            ProductViewModel productViewModelNotDecimalPrice = new()
             {
                 Name = "NameTest",
                 Price = "1.0001",
@@ -269,16 +295,16 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             };
 
             // Act 1 : Validate product model
-            ValidateModel(_productController, productViewModelNotDecimalPrice);
+            ValidateModel(productController, productViewModelNotDecimalPrice);
 
             // Assert 1 : Ensure ModelState is invalid
-            Assert.False(_productController.ModelState.IsValid, "Model should be invalid due to empty Name");
+            Assert.False(productController.ModelState.IsValid, "Model should be invalid due to empty Name");
 
             // Act 2: Attempt to create product with invalid model
-            var result = _productController.Create(productViewModelNotDecimalPrice);
+            var result = productController.Create(productViewModelNotDecimalPrice);
 
             // Assert 2: Verify product is not saved and correct ViewResult is returned
-            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Never);
+            mockProductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Never);
             Assert.IsType<ViewResult>(result);
         }
 
@@ -286,7 +312,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         public void Create_Add1ProductPriceNotGreaterThanZero_ModelStateInvalidProductNotCreated()
         {
             //Arrange 1: initialize the product with a negative price
-            ProductViewModel productViewModelNegativePrice = new ProductViewModel()
+            ProductViewModel productViewModelNegativePrice = new()
             {
                 Name = "NameTest",
                 Price = "-1.00",
@@ -297,16 +323,16 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             };
 
             // Act 1 : Validate product model
-            ValidateModel(_productController, productViewModelNegativePrice);
+            ValidateModel(productController, productViewModelNegativePrice);
 
             // Assert 1 : Ensure ModelState is invalid
-            Assert.False(_productController.ModelState.IsValid, "Model should be invalid due to empty Name");
+            Assert.False(productController.ModelState.IsValid, "Model should be invalid due to empty Name");
 
             // Act 2: Attempt to create product with invalid model
-            var result = _productController.Create(productViewModelNegativePrice);
+            var result = productController.Create(productViewModelNegativePrice);
 
             // Assert 2: Verify product is not saved and correct ViewResult is returned
-            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Never);
+            mockProductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Never);
             Assert.IsType<ViewResult>(result);
         }
 
@@ -314,7 +340,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         public void Create_Add1ProductMissingQuantity_ModelStateInvalidProductNotCreated()
         {
             //Arrange 1: initialize the product with an empty Stock
-            ProductViewModel productViewModelMissingQuantity = new ProductViewModel()
+            ProductViewModel productViewModelMissingQuantity = new()
             {
                 Name = "NameTest",
                 Price = "1.00",
@@ -325,16 +351,16 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             };
 
             // Act 1 : Validate product model
-            ValidateModel(_productController, productViewModelMissingQuantity);
+            ValidateModel(productController, productViewModelMissingQuantity);
 
             // Assert 1 : Ensure ModelState is invalid
-            Assert.False(_productController.ModelState.IsValid, "Model should be invalid due to empty Name");
+            Assert.False(productController.ModelState.IsValid, "Model should be invalid due to empty Name");
 
             // Act 2: Attempt to create product with invalid model
-            var result = _productController.Create(productViewModelMissingQuantity);
+            var result = productController.Create(productViewModelMissingQuantity);
 
             // Assert 2: Verify product is not saved and correct ViewResult is returned
-            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Never);
+            mockProductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Never);
             Assert.IsType<ViewResult>(result);
         }
 
@@ -342,7 +368,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         public void Create_Add1ProductQuantityNotANumber_ModelStateInvalidProductNotCreated()
         {
             //Arrange 1: initialize the product with a non Integer product quantity
-            ProductViewModel productViewModelQuantityNotANumber = new ProductViewModel()
+            ProductViewModel productViewModelQuantityNotANumber = new()
             {
                 Name = "NameTest",
                 Price = "1.00",
@@ -353,23 +379,23 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             };
 
             // Act 1 : Validate product model
-            ValidateModel(_productController, productViewModelQuantityNotANumber);
+            ValidateModel(productController, productViewModelQuantityNotANumber);
 
             // Assert 1 : Ensure ModelState is invalid
-            Assert.False(_productController.ModelState.IsValid, "Model should be invalid due to empty Name");
+            Assert.False(productController.ModelState.IsValid, "Model should be invalid due to empty Name");
 
             // Act 2: Attempt to create product with invalid model
-            var result = _productController.Create(productViewModelQuantityNotANumber);
+            var result = productController.Create(productViewModelQuantityNotANumber);
 
             // Assert 2: Verify product is not saved and correct ViewResult is returned
-            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Never);
+            mockProductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Never);
             Assert.IsType<ViewResult>(result);
         }
 
         [Fact]
         public void Create_Add1ProductQuantityNotGreaterThanZero_ModelStateInvalid()
         {
-            ProductViewModel productViewModelQuantityNotGreaterThanZero = new ProductViewModel()
+            ProductViewModel productViewModelQuantityNotGreaterThanZero = new()
             {
                 // Quantity is intentionally negative to test invalid ModelState
                 Name = "NameTest",
@@ -381,19 +407,40 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             };
 
             // Act 1 : Validate product model
-            ValidateModel(_productController, productViewModelQuantityNotGreaterThanZero);
+            ValidateModel(productController, productViewModelQuantityNotGreaterThanZero);
 
             // Assert 1 : Ensure ModelState is invalid
-            Assert.False(_productController.ModelState.IsValid, "Model should be invalid due to empty Name");
+            Assert.False(productController.ModelState.IsValid, "Model should be invalid due to empty Name");
 
             // Act 2: Attempt to create product with invalid model
-            var result = _productController.Create(productViewModelQuantityNotGreaterThanZero);
+            var result = productController.Create(productViewModelQuantityNotGreaterThanZero);
 
             // Assert 2: Verify product is not saved and correct ViewResult is returned
-            _mockproductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Never);
+            mockProductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Never);
             Assert.IsType<ViewResult>(result);
         }
 
         // TODO : Add test for DeleteProduct
+        [Fact]
+        public void Create_WhenClickingOnDelete_DeleteProduct()
+        {
+            ProductViewModel productViewModel1 = new() // This product is well defined
+            {
+                Name = "DeleteThis",
+                Price = "1.00",
+                Stock = "666",
+                Description = "We create this product. We Assert. We delete. We Assert.",
+                Details = "DetailsTest",
+            };
+
+            // Act
+            productController.Create(productViewModel1);
+            mockProductService.Verify(s => s.SaveProduct(productViewModel1));
+            productController.DeleteProduct(productViewModel1.Id);
+            mockProductService.Verify(s => s.DeleteProduct(productViewModel1.Id));
+
+
+
+        }
     }
 }
