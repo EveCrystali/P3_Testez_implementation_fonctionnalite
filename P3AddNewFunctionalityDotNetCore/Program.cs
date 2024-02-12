@@ -13,6 +13,8 @@ using P3AddNewFunctionalityDotNetCore;
 using System.Linq;
 using P3AddNewFunctionalityDotNetCore.Controllers;
 
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -88,3 +90,4 @@ app.MapControllerRoute(
 await IdentitySeedData.EnsurePopulated(app);
 
 app.Run();
+public partial class Program { }

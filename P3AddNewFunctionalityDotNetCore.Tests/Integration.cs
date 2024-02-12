@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Configuration;
 using System.Linq;
+using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
@@ -24,7 +25,9 @@ using P3AddNewFunctionalityDotNetCore.Models.Entities;
 using P3AddNewFunctionalityDotNetCore.Models.Repositories;
 using P3AddNewFunctionalityDotNetCore.Models.Services;
 using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
+using Shouldly;
 using Xunit;
+
 
 namespace P3AddNewFunctionalityDotNetCore.Test
 {
@@ -35,7 +38,7 @@ namespace P3AddNewFunctionalityDotNetCore.Test
         public ProductRepository productRepository;
         public readonly P3Referential _sharedContext;
         public AccountController _accountController;
-
+        public SignInManager<IdentityUser> SignInManager;
 
 
 
@@ -58,7 +61,6 @@ namespace P3AddNewFunctionalityDotNetCore.Test
 
             InitializeSeedData();
 
-
         }
 
         public void Dispose()
@@ -68,7 +70,6 @@ namespace P3AddNewFunctionalityDotNetCore.Test
 
         public void InitializeSeedData()
         {
-            
             var serviceCollection = new ServiceCollection();
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
@@ -103,7 +104,7 @@ namespace P3AddNewFunctionalityDotNetCore.Test
             return IdentitySeedData.AdminPassword == loginModel.Password && IdentitySeedData.AdminUser == loginModel.Name;
         }
 
-        private void SetupMockingForLoging(LoginModel loginModel, IdentityUser identityUser)
+        private void SetupMockingForLogIn(LoginModel loginModel, IdentityUser identityUser)
         {
             var mockUserStore = new Mock<IUserStore<IdentityUser>>();
             var mockUserManager = new Mock<UserManager<IdentityUser>>(
@@ -197,20 +198,13 @@ namespace P3AddNewFunctionalityDotNetCore.Test
 
             foreach (var loginModel in loginModels)
             {
-                IdentityUser identityUser = null;
-                if (loginModel.Name == "Admin" && loginModel.Password == "P@ssword123")
-                {
-                    identityUser = StartIdentityUser(loginModel); // Only create user for valid credentials
-                }
-                SetupMockingForLoging(loginModel, identityUser);
-
-                bool isValid1 = LoginValidator(loginModel);
+                SetupMockingForLogIn(loginModel, StartIdentityUser(loginModel));
 
                 // Act
                 var result = await _accountController.Login(loginModel);
 
                 // Assert
-                if (isValid1)
+                if (LoginValidator(loginModel))
                 {   // Assertions for Invalid credentials
                     Assert.IsType<RedirectResult>(result);
                     var redirectResult1 = result as RedirectResult;
@@ -230,7 +224,7 @@ namespace P3AddNewFunctionalityDotNetCore.Test
 
         // 3. THE USER CREATES TWO NEW PRODUCTS AND DELETE ONE
         [Fact]
-        public void AfterLogingCreateAndDeleteOneProductTest()
+        public void AfterLogingInCreateAndDeleteOneProductTest()
         {
             Mock<ILanguageService> _mockLanguageService = new Mock<ILanguageService>();
 
@@ -261,14 +255,12 @@ namespace P3AddNewFunctionalityDotNetCore.Test
             var validationContext1 = new ValidationContext(productViewModel1, null, null);
             var validationResults1 = new List<ValidationResult>();
             bool isValid1 = Validator.TryValidateObject(productViewModel1, new ValidationContext(productViewModel1, null, null), new List<ValidationResult>(), true);
-            
+
             var validationContext2 = new ValidationContext(productViewModel2, null, null);
             var validationResults2 = new List<ValidationResult>();
             bool isValid2 = Validator.TryValidateObject(productViewModel2, validationContext2, validationResults2, true);
 
-            //var redirectResult1 = productController.Create(productViewModel1) as RedirectToActionResult;
             productController.Create(productViewModel1);
-            //var redirectResult2 = productController.Create(productViewModel2) as RedirectToActionResult;
             productController.Create(productViewModel2);
 
             Product createdProduct1 = _sharedContext.Product.FirstOrDefault(p => p.Name == productViewModel1.Name);
@@ -276,22 +268,17 @@ namespace P3AddNewFunctionalityDotNetCore.Test
 
             // Assert
             Assert.True(isValid1, "Model should be valid because every field is well filled");
-            //Assert.NotNull(redirectResult1);
-            //Assert.Equal("Admin", redirectResult1.ActionName);
             Assert.NotNull(createdProduct1);
 
             Assert.True(isValid2, "Model should be valid because every field is well filled");
-            //Assert.NotNull(redirectResult2);
-            //Assert.Equal("Admin", redirectResult2.ActionName);
             Assert.NotNull(createdProduct2);
-            
-            // 3.2 User deletes one product  
+
+            // 3.2 User deletes one product
             //Act
             var redirectResult3 = productController.DeleteProduct(createdProduct1.Id) as RedirectToActionResult;
-            
+
             _sharedContext.SaveChanges();
             _sharedContext.ChangeTracker.Clear();
-
 
             // Assert
             Assert.Equal("Admin", redirectResult3.ActionName);
@@ -302,14 +289,13 @@ namespace P3AddNewFunctionalityDotNetCore.Test
         // 4. THE USER LOG OUT
 
         [Fact]
-        public async Task WhenClickOnLogoutButton_Logout()
+        public async Task LogOut_WhenUserClickOnLogout_LogoutAndRedirect()
         {
-
-            // Arrange
+            //// Arrange
             LoginModel loginModel = StartLoginModel("Admin", "P@ssword123", null);
             IdentityUser identityUser = StartIdentityUser(loginModel);
-            SetupMockingForLoging(loginModel, identityUser);
-            await _accountController.Login(loginModel);
+            SetupMockingForLogIn(loginModel, identityUser);
+            await _accountController.Login(loginModel); // Integration approach spirit
 
             // Act
             RedirectResult result_clickOnLogoutButton_Logout = await _accountController.Logout();

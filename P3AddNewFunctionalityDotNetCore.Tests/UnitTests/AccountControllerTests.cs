@@ -1,5 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System.Net.Http;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +20,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
     {
         private AccountController _accountController;
         private Mock<SignInManager<IdentityUser>> mockSignInManager;
+
 
         private static LoginModel StartLoginModel(string username, string password, string returnUrl)
         {
@@ -70,9 +73,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
 
             mockLocalizer.Setup(localizer => localizer["Invalid name or password"]).Returns(new LocalizedString("Invalid name or password", "Invalid credentials."));
 
-            bool isValid = LoginValidator(loginModel);
-
-            if (isValid)
+            if (LoginValidator(loginModel))
             {
                 mockUserManager.Setup(um => um.FindByNameAsync(loginModel.Name)).ReturnsAsync(identityUser);
                 mockUserManager.Setup(um => um.CheckPasswordAsync(identityUser, loginModel.Password)).ReturnsAsync(true);
@@ -85,7 +86,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
                     .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
             }
 
-            if (!isValid)
+            if (!LoginValidator(loginModel))
             {
                 mockUserManager.Setup(um => um.FindByNameAsync(loginModel.Name)).ReturnsAsync(identityUser);
                 mockUserManager.Setup(um => um.CheckPasswordAsync(identityUser, loginModel.Password)).ReturnsAsync(false);
@@ -125,14 +126,12 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             IdentityUser identityUser = StartIdentityUser(loginModel);
             SetupMocking(loginModel, identityUser);
 
-            bool isValid = LoginValidator(loginModel);
-
             // ACT
             var result = await _accountController.Login(loginModel);
 
             // ASSERT
 
-            if (result != null && isValid)
+            if (result != null && LoginValidator(loginModel))
             {
                 if (result is ViewResult viewResult)
                 {
@@ -252,7 +251,6 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             IdentityUser identityUser = StartIdentityUser(loginModel);
             SetupMocking(loginModel, identityUser);
             mockSignInManager.Setup(m => m.SignOutAsync()).Returns(Task.CompletedTask);
-            bool isValid = LoginValidator(loginModel);
 
             // Act
             var loginResult = await _accountController.Login(loginModel);

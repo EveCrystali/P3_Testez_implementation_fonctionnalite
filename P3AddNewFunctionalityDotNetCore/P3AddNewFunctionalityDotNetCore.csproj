@@ -46,4 +46,9 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="P3AddNewFunctionalityDotNetCore.Tests.Integration.WebApplicationFactory" />
+    <InternalsVisibleTo Include="P3AddNewFunctionalityDotNetCore.Tests" />
+  </ItemGroup>
+
 </Project>
