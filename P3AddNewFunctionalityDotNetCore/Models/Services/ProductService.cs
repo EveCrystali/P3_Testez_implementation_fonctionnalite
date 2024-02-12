@@ -26,15 +26,16 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Services
             _orderRepository = orderRepository;
             _localizer = localizer;
         }
+
         public List<ProductViewModel> GetAllProductsViewModel()
-        { 
+        {
             IEnumerable<Product> productEntities = GetAllProducts();
             return MapToViewModel(productEntities);
         }
 
         private static List<ProductViewModel> MapToViewModel(IEnumerable<Product> productEntities)
         {
-            List <ProductViewModel> products = new List<ProductViewModel>();
+            List<ProductViewModel> products = new();
             foreach (Product product in productEntities)
             {
                 products.Add(new ProductViewModel
@@ -63,7 +64,6 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Services
             return products.Find(p => p.Id == id);
         }
 
-
         public Product GetProductById(int id)
         {
             List<Product> products = GetAllProducts().ToList();
@@ -81,9 +81,10 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Services
             var products = await _productRepository.GetProduct();
             return products;
         }
+
         public void UpdateProductQuantities()
         {
-            Cart cart = (Cart) _cart;
+            Cart cart = (Cart)_cart;
             foreach (CartLine line in cart.Lines)
             {
                 int productId = line.Product.Id;
@@ -112,29 +113,28 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Services
 
         public static double ParseDoubleWithAutoDecimalSeparator(string doubleUnknownCulture)
         {
-            if (doubleUnknownCulture.Contains(","))
+            if (doubleUnknownCulture.Contains(','))
             {
                 doubleUnknownCulture = doubleUnknownCulture.Replace(",", ".");
                 return Double.Parse(doubleUnknownCulture, CultureInfo.InvariantCulture);
             }
-            if (doubleUnknownCulture.Contains("."))
+            if (doubleUnknownCulture.Contains('.'))
             {
                 return Double.Parse(doubleUnknownCulture, CultureInfo.InvariantCulture);
             }
-            else 
-            { 
+            else
+            {
                 return Double.Parse(doubleUnknownCulture);
             }
         }
 
-
         private static Product MapToProductEntity(ProductViewModel product)
         {
-            //We need to check wich culture is used to parse decimal :"," or "."
-            
+            //We need to check which culture is used to parse decimal :',' or '.'
+
             double priceParsed = ParseDoubleWithAutoDecimalSeparator(product.Price);
 
-            Product productEntity = new Product
+            Product productEntity = new()
             {
                 Name = product.Name,
                 Price = priceParsed,
@@ -146,8 +146,7 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Services
         }
 
         public void DeleteProduct(int id)
-        {         
-
+        {
             _cart.RemoveLine(GetProductById(id));
 
             _productRepository.DeleteProduct(id);

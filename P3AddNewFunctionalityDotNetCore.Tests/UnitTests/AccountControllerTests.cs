@@ -246,7 +246,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         }
 
         [Fact]
-        public async void Logout_WhenUserClickOnLogout_LogoutAndRedirect()
+        public async Task Logout_WhenUserClickOnLogout_LogoutAndRedirect()
         {
             LoginModel loginModel = StartLoginModel("Admin", "P@ssword123", null);
             IdentityUser identityUser = StartIdentityUser(loginModel);

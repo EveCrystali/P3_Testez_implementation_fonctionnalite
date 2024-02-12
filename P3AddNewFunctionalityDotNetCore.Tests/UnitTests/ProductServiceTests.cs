@@ -1,28 +1,28 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using P3AddNewFunctionalityDotNetCore.Controllers;
-using P3AddNewFunctionalityDotNetCore.Models.Entities;
-using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Xunit;
+using System.Linq;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Moq;
-using P3AddNewFunctionalityDotNetCore.Models.Services;
+using P3AddNewFunctionalityDotNetCore.Controllers;
+using P3AddNewFunctionalityDotNetCore.Models.Entities;
 using P3AddNewFunctionalityDotNetCore.Models.Repositories;
-using static P3AddNewFunctionalityDotNetCore.Models.Services.ProductService;
-using System.Linq;
+using P3AddNewFunctionalityDotNetCore.Models.Services;
+using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
 using Shouldly;
+using Xunit;
+using static P3AddNewFunctionalityDotNetCore.Models.Services.ProductService;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
 {
     public class ProductServiceTests
     {
-        private Mock<IProductRepository> mockProductRepository;
-        private Mock<IProductService> mockProductService;
-        private Mock<ILanguageService> mockLanguageService;
-        private Mock<IStringLocalizer<OrderController>> mockLocalizer;
-        private ProductController productController;
-        private List<Product> mockProductList = new();
+        private readonly Mock<IProductRepository> mockProductRepository;
+        private readonly Mock<IProductService> mockProductService;
+        private readonly Mock<ILanguageService> mockLanguageService;
+        private readonly Mock<IStringLocalizer<OrderController>> mockLocalizer;
+        private readonly ProductController productController;
+        private readonly List<Product> mockProductList = new();
 
         public ProductServiceTests()
         {
@@ -201,7 +201,6 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             mockProductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
             mockProductRepository.Verify(repo => repo.SaveProduct(It.IsAny<Product>()), Times.Exactly(5));
             mockProductRepository.Object.GetAllProducts().Count().ShouldBe(5);
-
         }
 
         private static void ValidateModel(Controller controller, object model)
@@ -422,7 +421,6 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             Assert.IsType<ViewResult>(result);
         }
 
-        // TODO : Add test for DeleteProduct
         [Fact]
         public void Create_WhenClickingOnDelete_DeleteProduct()
         {
