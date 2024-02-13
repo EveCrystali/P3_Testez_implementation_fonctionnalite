@@ -29,7 +29,7 @@ using Shouldly;
 using Xunit;
 
 
-namespace P3AddNewFunctionalityDotNetCore.Test
+namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
 {
     public class Integration : IDisposable
     {
@@ -209,7 +209,7 @@ namespace P3AddNewFunctionalityDotNetCore.Test
                     Assert.IsType<RedirectResult>(result);
                     var redirectResult1 = result as RedirectResult;
                     Assert.NotNull(redirectResult1);
-                    const string expectedUrl = "/Product/Admin";
+                    const string expectedUrl = "/";
                     Assert.Equal(expectedUrl, redirectResult1.Url);
                 }
                 else

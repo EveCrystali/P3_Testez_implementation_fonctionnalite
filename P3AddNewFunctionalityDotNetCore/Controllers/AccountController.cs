@@ -13,6 +13,7 @@ namespace P3AddNewFunctionalityDotNetCore.Controllers
         private readonly UserManager<IdentityUser> _userManager;
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly IStringLocalizer<AccountController> _localizer;
+
         public AccountController(UserManager<IdentityUser> userMgr, SignInManager<IdentityUser> signInMgr, IStringLocalizer<AccountController> localizer)
         {
             _userManager = userMgr;
@@ -44,7 +45,7 @@ namespace P3AddNewFunctionalityDotNetCore.Controllers
                     if ((await _signInManager.PasswordSignInAsync(user,
                     loginModel.Password, false, false)).Succeeded)
                     {
-                        return Redirect(loginModel.ReturnUrl ?? "/Product/Admin");                       
+                        return Redirect(loginModel.ReturnUrl ?? "/");
                     }
                 }
             }

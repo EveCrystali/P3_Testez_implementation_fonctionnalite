@@ -10,6 +10,6 @@ namespace P3AddNewFunctionalityDotNetCore.Models.ViewModels
         [Required(ErrorMessage = "ErrorMissingPassword")]
         public string Password { get; set; }
 
-        public string? ReturnUrl { get; set; } = null ;
+        public string? ReturnUrl { get; set; } = "/" ;
     }
 }
