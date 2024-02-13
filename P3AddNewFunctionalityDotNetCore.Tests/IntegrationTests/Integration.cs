@@ -1,15 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Configuration;
-using System.Linq;
-using System.Security.Claims;
-using System.Security.Principal;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -25,9 +16,13 @@ using P3AddNewFunctionalityDotNetCore.Models.Entities;
 using P3AddNewFunctionalityDotNetCore.Models.Repositories;
 using P3AddNewFunctionalityDotNetCore.Models.Services;
 using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
-using Shouldly;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
-
 
 namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
 {
@@ -39,8 +34,6 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
         public readonly P3Referential _sharedContext;
         public AccountController _accountController;
         public SignInManager<IdentityUser> SignInManager;
-
-
 
         public Integration()
         {
@@ -60,7 +53,6 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
             productRepository = new ProductRepository(_sharedContext);
 
             InitializeSeedData();
-
         }
 
         public void Dispose()
@@ -222,11 +214,30 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
             }
         }
 
+        public static void ValidateProduct(ProductViewModel product)
+        {
+            var validationContext = new ValidationContext(product, null, null);
+            var validationResults = new List<ValidationResult>();
+            bool isValid = Validator.TryValidateObject(product, validationContext, validationResults, true);
+            Assert.True(isValid, "Model should be valid because every field is well filled");
+        }
+
+        private static void CheckProductFields(Product createdProduct, ProductViewModel productViewModel)
+        {
+            Assert.Equal(createdProduct.Name, productViewModel.Name);
+            var actualPrice = decimal.Parse(createdProduct.Price.ToString(CultureInfo.InvariantCulture));
+            var expectedPrice = decimal.Parse(productViewModel.Price, CultureInfo.InvariantCulture);
+            Assert.Equal(expectedPrice, actualPrice);
+            Assert.Equal(productViewModel.Stock, createdProduct.Quantity.ToString());
+            Assert.Equal(createdProduct.Description, productViewModel.Description);
+            Assert.Equal(createdProduct.Details, productViewModel.Details);
+        }
+
         // 3. THE USER CREATES TWO NEW PRODUCTS AND DELETE ONE
         [Fact]
         public void AfterLogingInCreateAndDeleteOneProductTest()
         {
-            Mock<ILanguageService> _mockLanguageService = new Mock<ILanguageService>();
+            Mock<ILanguageService> _mockLanguageService = new();
 
             var productService = new ProductService(new Cart(), productRepository, new OrderRepository(_sharedContext), new Mock<IStringLocalizer<ProductService>>().Object);
 
@@ -252,14 +263,8 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
 
             // 3.1 CREATE
             // Act
-            var validationContext1 = new ValidationContext(productViewModel1, null, null);
-            var validationResults1 = new List<ValidationResult>();
-            bool isValid1 = Validator.TryValidateObject(productViewModel1, new ValidationContext(productViewModel1, null, null), new List<ValidationResult>(), true);
-
-            var validationContext2 = new ValidationContext(productViewModel2, null, null);
-            var validationResults2 = new List<ValidationResult>();
-            bool isValid2 = Validator.TryValidateObject(productViewModel2, validationContext2, validationResults2, true);
-
+            ValidateProduct(productViewModel1);
+            ValidateProduct(productViewModel2);
             productController.Create(productViewModel1);
             productController.Create(productViewModel2);
 
@@ -267,16 +272,21 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
             Product createdProduct2 = _sharedContext.Product.FirstOrDefault(p => p.Name == productViewModel2.Name);
 
             // Assert
-            Assert.True(isValid1, "Model should be valid because every field is well filled");
             Assert.NotNull(createdProduct1);
-
-            Assert.True(isValid2, "Model should be valid because every field is well filled");
             Assert.NotNull(createdProduct2);
+            _sharedContext.SaveChanges();
+            _sharedContext.ChangeTracker.Clear();
+            // Refetch the product from the database just before checking
+            _sharedContext.SaveChanges();
+            _sharedContext.ChangeTracker.Clear();
+            Product refreshedProduct1 = _sharedContext.Product.FirstOrDefault(p => p.Id == createdProduct1.Id);
+            Product refreshedProduct2 = _sharedContext.Product.FirstOrDefault(p => p.Id == createdProduct2.Id);
+            CheckProductFields(refreshedProduct1, productViewModel1);
+            CheckProductFields(refreshedProduct2, productViewModel2);
 
             // 3.2 User deletes one product
             //Act
             var redirectResult3 = productController.DeleteProduct(createdProduct1.Id) as RedirectToActionResult;
-
             _sharedContext.SaveChanges();
             _sharedContext.ChangeTracker.Clear();
 
