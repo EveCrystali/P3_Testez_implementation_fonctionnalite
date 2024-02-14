@@ -90,6 +90,13 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             Assert.Equal(12345, result);
         }
 
+        private static bool ValidateProduct(ProductViewModel productViewModel)
+        {
+            var validationContext = new ValidationContext(productViewModel, null, null);
+            var validationResults = new List<ValidationResult>();
+            return Validator.TryValidateObject(productViewModel, validationContext, validationResults, true);
+        }
+
         [Fact]
         public void Create_AddOneProductWithDifferentTypesOfPrice_ProductAddedInList()
         {
@@ -144,57 +151,33 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             };
 
             // Act
-            var validationContext1 = new ValidationContext(productViewModel1, null, null);
-            var validationResults1 = new List<ValidationResult>();
-            bool isValid1 = Validator.TryValidateObject(productViewModel1, validationContext1, validationResults1, true);
+            ValidateProduct(productViewModel1);
             var result1 = productController.Create(productViewModel1) as RedirectToActionResult;
-
-            var validationContext2 = new ValidationContext(productViewModel2, null, null);
-            var validationResults2 = new List<ValidationResult>();
-            bool isValid2 = Validator.TryValidateObject(productViewModel2, validationContext2, validationResults2, true);
             var result2 = productController.Create(productViewModel2) as RedirectToActionResult;
-
-            var validationContext3 = new ValidationContext(productViewModel3, null, null);
-            var validationResults3 = new List<ValidationResult>();
-            bool isValid3 = Validator.TryValidateObject(productViewModel3, validationContext3, validationResults3, true);
             var result3 = productController.Create(productViewModel3) as RedirectToActionResult;
-
-            var validationContext4 = new ValidationContext(productViewModel4, null, null);
-            var validationResults4 = new List<ValidationResult>();
-            bool isValid4 = Validator.TryValidateObject(productViewModel4, validationContext4, validationResults4, true);
             var result4 = productController.Create(productViewModel4) as RedirectToActionResult;
-
-            var validationContext5 = new ValidationContext(productViewModel5, null, null);
-            var validationResults5 = new List<ValidationResult>();
-            bool isValid5 = Validator.TryValidateObject(productViewModel5, validationContext5, validationResults5, true);
             var result5 = productController.Create(productViewModel5) as RedirectToActionResult;
 
             // Assert
             // Verify if the model is valid for each product and if the user is redirected to Admin.
             // Also ensure that all 5 products are passed as arguments to the SaveProduct method in ProductService and ProductRepository.
-
-            Assert.True(isValid1, "Model should be valid because every field is well filled");
-
+            Assert.True(ValidateProduct(productViewModel1), "Model should be valid because every field is well filled");
             Assert.NotNull(result1);
             Assert.Equal("Admin", result1.ActionName);
 
-            Assert.True(isValid2, "Model should be valid because every field is well filled");
-
+            Assert.True(ValidateProduct(productViewModel2), "Model should be valid because every field is well filled");
             Assert.NotNull(result2);
             Assert.Equal("Admin", result2.ActionName);
 
-            Assert.True(isValid3, "Model should be valid because every field is well filled");
-
+            Assert.True(ValidateProduct(productViewModel3), "Model should be valid because every field is well filled");
             Assert.NotNull(result3);
             Assert.Equal("Admin", result3.ActionName);
 
-            Assert.True(isValid4, "Model should be valid because every field is well filled");
-
+            Assert.True(ValidateProduct(productViewModel4), "Model should be valid because every field is well filled");
             Assert.NotNull(result4);
             Assert.Equal("Admin", result4.ActionName);
 
-            Assert.True(isValid5, "Model should be valid because every field is well filled");
-
+            Assert.True(ValidateProduct(productViewModel5), "Model should be valid because every field is well filled");
             Assert.NotNull(result5);
             Assert.Equal("Admin", result5.ActionName);
 

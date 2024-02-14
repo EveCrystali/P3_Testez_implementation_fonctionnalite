@@ -1,4 +1,10 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -16,12 +22,6 @@ using P3AddNewFunctionalityDotNetCore.Models.Entities;
 using P3AddNewFunctionalityDotNetCore.Models.Repositories;
 using P3AddNewFunctionalityDotNetCore.Models.Services;
 using P3AddNewFunctionalityDotNetCore.Models.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Globalization;
-using System.Linq;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
@@ -170,11 +170,11 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
         [Fact]
         private void SeedDataTest()
         {
-            foreach (var product in _sharedContext.Product)
-            {
-                var productInDb = _sharedContext.Product.FirstOrDefault(p => p.Name == product.Name);
-                Assert.NotNull(productInDb);
-            }
+            // Act
+            InitializeSeedData();
+
+            // Assert
+            Assert.True(_sharedContext.Product.Any());
         }
 
         // 2. THE USER IS CONNECTING TO THE ADMIN PAGE

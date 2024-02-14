@@ -156,9 +156,9 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             // ARRANGE - Different scenarios of invalid credentials
 
             // Username: WrongId, Password: WrongPassword
-            LoginModel loginModel = StartLoginModel("WrongId", "WrongPassword", null);
-            IdentityUser identityUser = StartIdentityUser(loginModel);
-            SetupMocking(loginModel, identityUser);
+            LoginModel loginModel1 = StartLoginModel("WrongId", "WrongPassword", null);
+            IdentityUser identityUser = StartIdentityUser(loginModel1);
+            SetupMocking(loginModel1, identityUser);
 
             // Username: "WrongId", Password: "P@ssword123"
             LoginModel loginModel2 = StartLoginModel("WrongId", "P@ssword123", null);
@@ -185,15 +185,8 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
             IdentityUser identityUser6 = StartIdentityUser(loginModel6);
             SetupMocking(loginModel6, identityUser6);
 
-            bool isValid = LoginValidator(loginModel);
-            bool isValid2 = LoginValidator(loginModel2);
-            bool isValid3 = LoginValidator(loginModel3);
-            bool isValid4 = LoginValidator(loginModel4);
-            bool isValid5 = LoginValidator(loginModel5);
-            bool isValid6 = LoginValidator(loginModel6);
-
             // ACT
-            var result = await _accountController.Login(loginModel);
+            var result = await _accountController.Login(loginModel1);
             var viewResult = result as ViewResult;
 
             var result2 = await _accountController.Login(loginModel2);
@@ -213,32 +206,32 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
 
             // ASSERT
 
-            Assert.False(isValid, "ModelState should be Invalid because we have used wrong credentials");
+            Assert.False(LoginValidator(loginModel1), "ModelState should be Invalid because we have used wrong credentials");
             Assert.NotNull(result);
             Assert.IsType<ViewResult>(result);
             Assert.True(viewResult.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
 
-            Assert.False(isValid2, "ModelState should be Invalid because we have used wrong credentials");
+            Assert.False(LoginValidator(loginModel2), "ModelState should be Invalid because we have used wrong credentials");
             Assert.NotNull(result2);
             Assert.IsType<ViewResult>(result2);
             Assert.True(viewResult2.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
 
-            Assert.False(isValid3, "ModelState should be Invalid because we have used wrong credentials");
+            Assert.False(LoginValidator(loginModel3), "ModelState should be Invalid because we have used wrong credentials");
             Assert.NotNull(result3);
             Assert.IsType<ViewResult>(result3);
             Assert.True(viewResult3.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
 
-            Assert.False(isValid4, "ModelState should be Invalid because we have used wrong credentials");
+            Assert.False(LoginValidator(loginModel4), "ModelState should be Invalid because we have used wrong credentials");
             Assert.NotNull(result4);
             Assert.IsType<ViewResult>(result4);
             Assert.True(viewResult4.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
 
-            Assert.False(isValid5, "ModelState should be Invalid because we have used wrong credentials");
+            Assert.False(LoginValidator(loginModel5), "ModelState should be Invalid because we have used wrong credentials");
             Assert.NotNull(result5);
             Assert.IsType<ViewResult>(result5);
             Assert.True(viewResult5.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
 
-            Assert.False(isValid6, "ModelState should be Invalid because we have used wrong credentials");
+            Assert.False(LoginValidator(loginModel6), "ModelState should be Invalid because we have used wrong credentials");
             Assert.NotNull(result6);
             Assert.IsType<ViewResult>(result6);
             Assert.True(viewResult6.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
