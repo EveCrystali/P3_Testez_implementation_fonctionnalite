@@ -99,66 +99,30 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
         private void SetupMockingForLogIn(LoginModel loginModel, IdentityUser identityUser)
         {
             var mockUserStore = new Mock<IUserStore<IdentityUser>>();
-            var mockUserManager = new Mock<UserManager<IdentityUser>>(
-                mockUserStore.Object, null, null, null, null, null, null, null, null);
-
+            var mockUserManager = new Mock<UserManager<IdentityUser>>(mockUserStore.Object, null, null, null, null, null, null, null, null);
             var mockContextAccessor = new Mock<IHttpContextAccessor>();
             var mockUserPrincipalFactory = new Mock<IUserClaimsPrincipalFactory<IdentityUser>>();
             var mockOptions = new Mock<IOptions<IdentityOptions>>();
             var mockLogger = new Mock<ILogger<SignInManager<IdentityUser>>>();
             var mockAuthSchemeProvider = new Mock<IAuthenticationSchemeProvider>();
             var mockUserConfirmation = new Mock<IUserConfirmation<IdentityUser>>();
-
-            var mockSignInManager = new Mock<SignInManager<IdentityUser>>(
-                mockUserManager.Object,
-                mockContextAccessor.Object,
-                mockUserPrincipalFactory.Object,
-                mockOptions.Object,
-                mockLogger.Object,
-                mockAuthSchemeProvider.Object,
-                mockUserConfirmation.Object);
-
+            var mockSignInManager = new Mock<SignInManager<IdentityUser>>(mockUserManager.Object, mockContextAccessor.Object, mockUserPrincipalFactory.Object, mockOptions.Object, mockLogger.Object, mockAuthSchemeProvider.Object, mockUserConfirmation.Object);
             var mockLocalizer = new Mock<IStringLocalizer<AccountController>>();
 
             mockLocalizer.Setup(localizer => localizer["Invalid name or password"]).Returns(new LocalizedString("Invalid name or password", "Invalid credentials."));
+            mockUserManager.Setup(um => um.FindByNameAsync(loginModel.Name)).ReturnsAsync(identityUser);
+            mockUserManager.Setup(um => um.CheckPasswordAsync(identityUser, loginModel.Password)).ReturnsAsync(LoginValidator(loginModel));
+            mockSignInManager.Setup(m => m.PasswordSignInAsync(
+                It.IsAny<IdentityUser>(),
+                It.IsAny<string>(),
+                It.IsAny<bool>(),
+                It.IsAny<bool>()))
+                .ReturnsAsync(LoginValidator(loginModel) ? Microsoft.AspNetCore.Identity.SignInResult.Success : Microsoft.AspNetCore.Identity.SignInResult.Failed);
 
-            bool isValid = LoginValidator(loginModel);
-
-            if (isValid)
-            {
-                mockUserManager.Setup(um => um.FindByNameAsync(loginModel.Name)).ReturnsAsync(identityUser);
-                mockUserManager.Setup(um => um.CheckPasswordAsync(identityUser, loginModel.Password)).ReturnsAsync(true);
-
-                mockSignInManager.Setup(m => m.PasswordSignInAsync(
-                    It.IsAny<IdentityUser>(),
-                    It.IsAny<string>(),
-                    It.IsAny<bool>(),
-                    It.IsAny<bool>()))
-                    .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
-            }
-
-            if (!isValid)
-            {
-                mockUserManager.Setup(um => um.FindByNameAsync(loginModel.Name)).ReturnsAsync(identityUser);
-                mockUserManager.Setup(um => um.CheckPasswordAsync(identityUser, loginModel.Password)).ReturnsAsync(false);
-
-                mockSignInManager.Setup(m => m.PasswordSignInAsync(
-                    It.IsAny<IdentityUser>(),
-                    It.IsAny<string>(),
-                    It.IsAny<bool>(),
-                    It.IsAny<bool>()))
-                    .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Failed);
-            }
-
-            _accountController = new AccountController(
-                mockUserManager.Object, mockSignInManager.Object, mockLocalizer.Object);
+            _accountController = new AccountController(mockUserManager.Object, mockSignInManager.Object, mockLocalizer.Object);
 
             var httpContextMock = new Mock<HttpContext>();
-
-            var controllerContext = new ControllerContext()
-            {
-                HttpContext = httpContextMock.Object
-            };
+            var controllerContext = new ControllerContext(){HttpContext = httpContextMock.Object};
 
             mockSignInManager.Object.Context = httpContextMock.Object;
             _accountController.ControllerContext = controllerContext;
@@ -179,7 +143,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
 
         // 2. THE USER IS CONNECTING TO THE ADMIN PAGE
         [Fact]
-        public async Task Login_WithMixedCredentials_ShouldFailThenSucceed()
+        public async Task Login_ValidAndInvalidCredentials_ReturnsExpectedResults()
         {
             // Arrange
             var loginModels = new List<LoginModel>
@@ -199,27 +163,19 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
                 if (LoginValidator(loginModel))
                 {   // Assertions for Invalid credentials
                     Assert.IsType<RedirectResult>(result);
-                    var redirectResult1 = result as RedirectResult;
-                    Assert.NotNull(redirectResult1);
-                    const string expectedUrl = "/";
-                    Assert.Equal(expectedUrl, redirectResult1.Url);
+                    Assert.Equal("/", (result as RedirectResult).Url);
                 }
                 else
                 {   // Assertions for valid credentials
                     Assert.IsType<ViewResult>(result);
-                    var viewResult = result as ViewResult;
-                    Assert.NotNull(viewResult);
-                    Assert.True(viewResult.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
+                    Assert.True((result as ViewResult).ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
                 }
             }
         }
 
         public static void ValidateProduct(ProductViewModel product)
         {
-            var validationContext = new ValidationContext(product, null, null);
-            var validationResults = new List<ValidationResult>();
-            bool isValid = Validator.TryValidateObject(product, validationContext, validationResults, true);
-            Assert.True(isValid, "Model should be valid because every field is well filled");
+            Assert.True(Validator.TryValidateObject(product, new ValidationContext(product, null, null), new List<ValidationResult>(), true), "Model should be valid because every field is well filled");
         }
 
         private static void CheckProductFields(Product createdProduct, ProductViewModel productViewModel)
@@ -238,11 +194,8 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
         public void AfterLogingInCreateAndDeleteOneProductTest()
         {
             Mock<ILanguageService> _mockLanguageService = new();
-
             var productService = new ProductService(new Cart(), productRepository, new OrderRepository(_sharedContext), new Mock<IStringLocalizer<ProductService>>().Object);
-
             var productController = new ProductController(productService, _mockLanguageService.Object);
-
             ProductViewModel productViewModel1 = new() // This product is well defined
             {
                 Name = "DeleteThis",
@@ -251,7 +204,6 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
                 Description = "We create this product. We Assert. We delete. We Assert.",
                 Details = "DetailsTest",
             };
-
             ProductViewModel productViewModel2 = new() // This product is well defined
             {
                 Name = "KeepThis",
@@ -263,24 +215,21 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
 
             // 3.1 CREATE
             // Act
-            ValidateProduct(productViewModel1);
-            ValidateProduct(productViewModel2);
             productController.Create(productViewModel1);
             productController.Create(productViewModel2);
-
             Product createdProduct1 = _sharedContext.Product.FirstOrDefault(p => p.Name == productViewModel1.Name);
             Product createdProduct2 = _sharedContext.Product.FirstOrDefault(p => p.Name == productViewModel2.Name);
 
             // Assert
-            Assert.NotNull(createdProduct1);
-            Assert.NotNull(createdProduct2);
-            _sharedContext.SaveChanges();
-            _sharedContext.ChangeTracker.Clear();
+            ValidateProduct(productViewModel1);
+            ValidateProduct(productViewModel2);
             // Refetch the product from the database just before checking
             _sharedContext.SaveChanges();
             _sharedContext.ChangeTracker.Clear();
             Product refreshedProduct1 = _sharedContext.Product.FirstOrDefault(p => p.Id == createdProduct1.Id);
             Product refreshedProduct2 = _sharedContext.Product.FirstOrDefault(p => p.Id == createdProduct2.Id);
+            Assert.NotNull(refreshedProduct1);
+            Assert.NotNull(refreshedProduct2);
             CheckProductFields(refreshedProduct1, productViewModel1);
             CheckProductFields(refreshedProduct2, productViewModel2);
 

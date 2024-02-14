@@ -105,7 +105,6 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
             var loginPageResponse = await _client.GetAsync("/Account/Login");
             var loginPageContent = await loginPageResponse.Content.ReadAsStringAsync();
             var antiforgeryToken = ExtractAntiForgeryToken(loginPageContent);
-
             var loginContent = new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("Name", "Admin"),
