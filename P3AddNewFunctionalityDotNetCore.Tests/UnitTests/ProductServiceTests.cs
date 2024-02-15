@@ -100,86 +100,26 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         [Fact]
         public void Create_AddOneProductWithDifferentTypesOfPrice_ProductAddedInList()
         {
-            ProductViewModel productViewModel1 = new()
-            {   // Price has decimal dot
-                Name = "NameTest",
-                Price = "1.00",
-                Stock = "1",
-                Description = "DescriptionTest",
-                Details = "DetailsTest",
-                Id = 1
+            List<ProductViewModel> productViewModels = new()
+            {
+                new ProductViewModel { Name = "NameTest", Price = "1.00", Stock = "1", Description = "DescriptionTest", Details = "DetailsTest", Id = 1 },
+                new ProductViewModel { Name = "NameTest", Price = "1,00", Stock = "1", Description = "DescriptionTest", Details = "DetailsTest", Id = 2 },
+                new ProductViewModel { Name = "NameTest", Price = "1.", Stock = "1", Description = "DescriptionTest", Details = "DetailsTest", Id = 3 },
+                new ProductViewModel { Name = "NameTest", Price = "1,", Stock = "1", Description = "DescriptionTest", Details = "DetailsTest", Id = 4 },
+                new ProductViewModel { Name = "NameTest", Price = "1", Stock = "1", Description = "DescriptionTest", Details = "DetailsTest", Id = 5 }
             };
 
-            ProductViewModel productViewModel2 = new()
-            {   // Price has decimal comma
-                Name = "NameTest",
-                Price = "1,00",
-                Stock = "1",
-                Description = "DescriptionTest",
-                Details = "DetailsTest",
-                Id = 2
-            };
+            foreach (var productViewModel in productViewModels)
+            {
+                // Act
+                ValidateProduct(productViewModel);
+                var result = productController.Create(productViewModel) as RedirectToActionResult;
 
-            ProductViewModel productViewModel3 = new()
-            {   //Price has decimal dot none
-                Name = "NameTest",
-                Price = "1.",
-                Stock = "1",
-                Description = "DescriptionTest",
-                Details = "DetailsTest",
-                Id = 3
-            };
-
-            ProductViewModel productViewModel4 = new()
-            {   // Price has decimal comma none
-                Name = "NameTest",
-                Price = "1,",
-                Stock = "1",
-                Description = "DescriptionTest",
-                Details = "DetailsTest",
-                Id = 4
-            };
-
-            ProductViewModel productViewModel5 = new()
-            {   //Price is an integer
-                Name = "NameTest",
-                Price = "1",
-                Stock = "1",
-                Description = "DescriptionTest",
-                Details = "DetailsTest",
-                Id = 5
-            };
-
-            // Act
-            ValidateProduct(productViewModel1);
-            var result1 = productController.Create(productViewModel1) as RedirectToActionResult;
-            var result2 = productController.Create(productViewModel2) as RedirectToActionResult;
-            var result3 = productController.Create(productViewModel3) as RedirectToActionResult;
-            var result4 = productController.Create(productViewModel4) as RedirectToActionResult;
-            var result5 = productController.Create(productViewModel5) as RedirectToActionResult;
-
-            // Assert
-            // Verify if the model is valid for each product and if the user is redirected to Admin.
-            // Also ensure that all 5 products are passed as arguments to the SaveProduct method in ProductService and ProductRepository.
-            Assert.True(ValidateProduct(productViewModel1), "Model should be valid because every field is well filled");
-            Assert.NotNull(result1);
-            Assert.Equal("Admin", result1.ActionName);
-
-            Assert.True(ValidateProduct(productViewModel2), "Model should be valid because every field is well filled");
-            Assert.NotNull(result2);
-            Assert.Equal("Admin", result2.ActionName);
-
-            Assert.True(ValidateProduct(productViewModel3), "Model should be valid because every field is well filled");
-            Assert.NotNull(result3);
-            Assert.Equal("Admin", result3.ActionName);
-
-            Assert.True(ValidateProduct(productViewModel4), "Model should be valid because every field is well filled");
-            Assert.NotNull(result4);
-            Assert.Equal("Admin", result4.ActionName);
-
-            Assert.True(ValidateProduct(productViewModel5), "Model should be valid because every field is well filled");
-            Assert.NotNull(result5);
-            Assert.Equal("Admin", result5.ActionName);
+                // Assert
+                Assert.True(ValidateProduct(productViewModel), "Model should be valid because every field is well filled");
+                Assert.NotNull(result);
+                Assert.Equal("Admin", result.ActionName);
+            }
 
             mockProductService.Verify(service => service.SaveProduct(It.IsAny<ProductViewModel>()), Times.Exactly(5));
             mockProductRepository.Verify(repo => repo.SaveProduct(It.IsAny<Product>()), Times.Exactly(5));
