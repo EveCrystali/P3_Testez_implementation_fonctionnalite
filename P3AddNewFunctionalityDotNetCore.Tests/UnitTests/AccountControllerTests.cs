@@ -1,7 +1,7 @@
-﻿using System.Net.Http;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Hosting;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +20,6 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
     {
         private AccountController _accountController;
         private Mock<SignInManager<IdentityUser>> mockSignInManager;
-
 
         private static LoginModel StartLoginModel(string username, string password, string returnUrl)
         {
@@ -153,88 +152,35 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         [Fact]
         public async Task Login_WhenInvalidCredentials_NotLogIn()
         {
-            // ARRANGE - Different scenarios of invalid credentials
+            // Arrange
+            var loginModels = new List<LoginModel>
+            {
+                StartLoginModel("WrongId", "WrongPassword", null),
+                StartLoginModel("WrongId", "P@ssword123", null),
+                StartLoginModel("Admin", "WrongPassword", null),
+                StartLoginModel("", "", null),
+                StartLoginModel("", "P@ssword123", null),
+                StartLoginModel("Admin", "", null)
+            };
+            var identityUsers = loginModels.ConvertAll(StartIdentityUser);
+            foreach (var indexedUser in loginModels.Select((model, index) => new { Model = model, Index = index }))
+            {
+                SetupMocking(indexedUser.Model, identityUsers[indexedUser.Index]);
+            }
 
-            // Username: WrongId, Password: WrongPassword
-            LoginModel loginModel1 = StartLoginModel("WrongId", "WrongPassword", null);
-            IdentityUser identityUser = StartIdentityUser(loginModel1);
-            SetupMocking(loginModel1, identityUser);
+            // Act & Assert
+            foreach (var loginModel in loginModels)
+            {
+                // Act
+                var result = await _accountController.Login(loginModel);
+                var viewResult = result as ViewResult;
 
-            // Username: "WrongId", Password: "P@ssword123"
-            LoginModel loginModel2 = StartLoginModel("WrongId", "P@ssword123", null);
-            IdentityUser identityUser2 = StartIdentityUser(loginModel2);
-            SetupMocking(loginModel2, identityUser2);
-
-            // Username: "Admin", Password: "WrongPassword"
-            LoginModel loginModel3 = StartLoginModel("Admin", "WrongPassword", null);
-            IdentityUser identityUser3 = StartIdentityUser(loginModel3);
-            SetupMocking(loginModel3, identityUser3);
-
-            // Username: "", Password: ""
-            LoginModel loginModel4 = StartLoginModel("", "", null);
-            IdentityUser identityUser4 = StartIdentityUser(loginModel4);
-            SetupMocking(loginModel4, identityUser4);
-
-            // Username: "", Password: "P@ssword123"
-            LoginModel loginModel5 = StartLoginModel("", "P@ssword123", null);
-            IdentityUser identityUser5 = StartIdentityUser(loginModel5);
-            SetupMocking(loginModel5, identityUser5);
-
-            // Username: "Admin", Password: ""
-            LoginModel loginModel6 = StartLoginModel("Admin", "", null);
-            IdentityUser identityUser6 = StartIdentityUser(loginModel6);
-            SetupMocking(loginModel6, identityUser6);
-
-            // ACT
-            var result = await _accountController.Login(loginModel1);
-            var viewResult = result as ViewResult;
-
-            var result2 = await _accountController.Login(loginModel2);
-            var viewResult2 = result2 as ViewResult;
-
-            var result3 = await _accountController.Login(loginModel3);
-            var viewResult3 = result3 as ViewResult;
-
-            var result4 = await _accountController.Login(loginModel4);
-            var viewResult4 = result4 as ViewResult;
-
-            var result5 = await _accountController.Login(loginModel5);
-            var viewResult5 = result5 as ViewResult;
-
-            var result6 = await _accountController.Login(loginModel6);
-            var viewResult6 = result6 as ViewResult;
-
-            // ASSERT
-
-            Assert.False(LoginValidator(loginModel1), "ModelState should be Invalid because we have used wrong credentials");
-            Assert.NotNull(result);
-            Assert.IsType<ViewResult>(result);
-            Assert.True(viewResult.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
-
-            Assert.False(LoginValidator(loginModel2), "ModelState should be Invalid because we have used wrong credentials");
-            Assert.NotNull(result2);
-            Assert.IsType<ViewResult>(result2);
-            Assert.True(viewResult2.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
-
-            Assert.False(LoginValidator(loginModel3), "ModelState should be Invalid because we have used wrong credentials");
-            Assert.NotNull(result3);
-            Assert.IsType<ViewResult>(result3);
-            Assert.True(viewResult3.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
-
-            Assert.False(LoginValidator(loginModel4), "ModelState should be Invalid because we have used wrong credentials");
-            Assert.NotNull(result4);
-            Assert.IsType<ViewResult>(result4);
-            Assert.True(viewResult4.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
-
-            Assert.False(LoginValidator(loginModel5), "ModelState should be Invalid because we have used wrong credentials");
-            Assert.NotNull(result5);
-            Assert.IsType<ViewResult>(result5);
-            Assert.True(viewResult5.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
-
-            Assert.False(LoginValidator(loginModel6), "ModelState should be Invalid because we have used wrong credentials");
-            Assert.NotNull(result6);
-            Assert.IsType<ViewResult>(result6);
-            Assert.True(viewResult6.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
+                //Assert
+                Assert.False(LoginValidator(loginModel), "ModelState should be Invalid because we have used wrong credentials");
+                Assert.NotNull(result);
+                Assert.IsType<ViewResult>(result);
+                Assert.True(viewResult.ViewData.ModelState.ContainsKey("InvalidCredentials"), "ModelState should contain an error for 'InvalidCredentials'");
+            }
         }
 
         [Fact]
