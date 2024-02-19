@@ -117,7 +117,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         }
 
         [Fact]
-        public async Task Login_WhenValidCredentials_LogsInAndRedirectsToAdminIndex()
+        public async Task Login_WhenValidCredentials_LogsInAndRedirects()
         {
             // ARRANGE
 
