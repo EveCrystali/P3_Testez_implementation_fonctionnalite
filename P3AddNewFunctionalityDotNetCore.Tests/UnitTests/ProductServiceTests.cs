@@ -98,8 +98,9 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         }
 
         [Fact]
-        public void Create_AddOneProductWithDifferentTypesOfPrice_ProductAddedInList()
+        public void Create_AddOneProductWithDifferentTypesOfPrice_ProductCreated()
         {
+            // Arrange
             List<ProductViewModel> productViewModels = new()
             {
                 new ProductViewModel { Name = "NameTest", Price = "1.00", Stock = "1", Description = "DescriptionTest", Details = "DetailsTest", Id = 1 },
@@ -319,6 +320,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         [Fact]
         public void Create_Add1ProductQuantityNotGreaterThanZero_ModelStateInvalid()
         {
+            // Arrange 
             ProductViewModel productViewModelQuantityNotGreaterThanZero = new()
             {
                 // Quantity is intentionally negative to test invalid ModelState
@@ -345,8 +347,9 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.UnitTests
         }
 
         [Fact]
-        public void Create_WhenClickingOnDelete_DeleteProduct()
+        public void DeleteProduct_WhenClickingOnDelete_DeleteProduct()
         {
+            // Arrange
             ProductViewModel productViewModel1 = new() // This product is well defined
             {
                 Name = "DeleteThis",
