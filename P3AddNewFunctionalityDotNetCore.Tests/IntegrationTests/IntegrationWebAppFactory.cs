@@ -123,6 +123,14 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
                 Assert.Equal("/", redirectUrl);
                 var followRedirectResponse = await _client.GetAsync(redirectUrl);
                 Assert.Equal(HttpStatusCode.OK, followRedirectResponse.StatusCode);
+
+                // Act
+                //Logout
+                var logoutResponse = await _client.PostAsync("/Account/Logout", null);
+
+                // Assert
+                Assert.Equal(HttpStatusCode.Redirect, logoutResponse.StatusCode);
+                Assert.Equal("/", logoutResponse.Headers.Location?.OriginalString);
             }
             else if (loginResponse.StatusCode == HttpStatusCode.OK)
             {
@@ -133,13 +141,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
                 Assert.Fail("Case not handled in the login method - Unexpected errors");
             }
 
-            // Act
-            //Logout
-            var logoutResponse = await _client.PostAsync("/Account/Logout", null);
-
-            // Assert
-            Assert.Equal(HttpStatusCode.Redirect, logoutResponse.StatusCode);
-            Assert.Equal("/", logoutResponse.Headers.Location?.OriginalString);
+            
         }
     }
 }

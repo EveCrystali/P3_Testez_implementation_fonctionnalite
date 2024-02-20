@@ -193,6 +193,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.IntegrationTests
         [Fact]
         public void AfterLogingInCreateAndDeleteOneProductTest()
         {
+            // Arrange
             Mock<ILanguageService> _mockLanguageService = new();
             var productService = new ProductService(new Cart(), productRepository, new OrderRepository(_sharedContext), new Mock<IStringLocalizer<ProductService>>().Object);
             var productController = new ProductController(productService, _mockLanguageService.Object);
